@@ -1,0 +1,142 @@
+/**
+ * CM Discount Engine — Frontend styles.
+ */
+
+/* ─── Product page: discount hint ─── */
+.cm-discount-hint {
+	margin: 28px 0 16px !important;
+	padding: 20px 20px 24px !important;
+	background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
+	border: 1px solid #bbf7d0;
+	border-radius: 10px;
+	font-size: 14px;
+	line-height: 1.4;
+	color: #166534;
+}
+
+.cm-discount-hint__header {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px !important;
+	margin-bottom: 14px !important;
+	font-weight: 600;
+	font-size: 13px;
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+	color: #15803d;
+}
+
+.cm-discount-hint__icon {
+	flex-shrink: 0;
+	display: flex;
+	align-items: center;
+	color: #16a34a;
+}
+
+.cm-discount-hint__tiers {
+	display: flex;
+	gap: 8px !important;
+}
+
+.cm-discount-hint__tier {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 4px !important;
+	padding: 14px 10px !important;
+	background: rgba(255, 255, 255, 0.7);
+	border: 1px solid #bbf7d0;
+	border-radius: 8px;
+	transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.cm-discount-hint__tier:hover {
+	transform: translateY(-1px);
+	box-shadow: 0 2px 8px rgba(22, 163, 74, 0.12);
+}
+
+.cm-discount-hint__tier--best {
+	background: #dcfce7;
+	border-color: #86efac;
+}
+
+.cm-discount-hint__tier-packs {
+	font-size: 16px;
+	font-weight: 700;
+	color: #166534;
+	line-height: 1.2;
+}
+
+.cm-discount-hint__tier-label {
+	font-size: 11px;
+	color: #4ade80;
+	font-weight: 500;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	line-height: 1;
+}
+
+.cm-discount-hint__tier-rate {
+	font-size: 18px;
+	font-weight: 800;
+	color: #16a34a;
+	line-height: 1.2;
+}
+
+.cm-discount-hint__tier--best .cm-discount-hint__tier-rate {
+	color: #15803d;
+}
+
+/* ─── Cart: upsell message ─── */
+.cm-upsell-message {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin: 0 0 16px;
+	padding: 12px 16px;
+	background: #fefce8;
+	border: 1px solid #fde68a;
+	border-radius: 6px;
+	font-size: 14px;
+	line-height: 1.4;
+	color: #854d0e;
+}
+
+.cm-upsell-message__icon {
+	flex-shrink: 0;
+	font-size: 16px;
+}
+
+/* ─── Cart: applied discount notice ─── */
+.cm-cart-notice {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin: 0 0 16px;
+	padding: 12px 16px;
+	background: #eff6ff;
+	border: 1px solid #bfdbfe;
+	border-radius: 6px;
+	font-size: 14px;
+	line-height: 1.4;
+	color: #1e40af;
+}
+
+.cm-cart-notice__icon {
+	flex-shrink: 0;
+	font-size: 16px;
+	color: #16a34a;
+}
+
+/* ─── Shipping hint (inside cart totals table) ─── */
+.cm-shipping-upsell {
+	margin: 4px 0;
+	padding: 8px 12px;
+	font-size: 13px;
+}
+
+.cm-shipping-hint td {
+	padding: 2px 0 !important;
+}
