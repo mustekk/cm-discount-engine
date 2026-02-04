@@ -125,9 +125,23 @@
 		} );
 	}
 
-	// Listen for changes.
+	// Listen for changes (native events — manual typing, etc.).
 	qtyInput.addEventListener( 'input', update );
 	qtyInput.addEventListener( 'change', update );
+
+	// ShopLentor / Royal Addons +/- buttons (.fas.fa-plus, .fas.fa-minus)
+	// sit in .wpr-add-to-cart-icons-wrap — a sibling of .quantity, not a child.
+	// They set the input value directly without firing any DOM events.
+	// Listen on the common ancestor that contains both input and buttons.
+	var qtyWrap = qtyInput.closest( '.wpr-quantity-wrapper' )
+		|| qtyInput.closest( '.wpr-simple-qty-wrap' )
+		|| qtyInput.closest( '.quantity' )
+		|| qtyInput.parentElement;
+	if ( qtyWrap ) {
+		qtyWrap.addEventListener( 'click', function () {
+			setTimeout( update, 10 );
+		} );
+	}
 
 	// Initial render.
 	update();

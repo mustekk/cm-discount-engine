@@ -260,9 +260,11 @@ class CM_Virtual_Coupon {
 		// Hide dummy promo code coupons (zero-value intercepts)
 		$promo = CM_Promo_Codes::validate_code( $code );
 		if ( $promo && $coupon->get_amount() == 0 ) {
-			// Track the code to hide via wp_footer CSS output
-			self::$hidden_coupon_codes[] = sanitize_title( $code );
-			return '';
+			// Output inline <style> to hide the entire <tr> row.
+			// This works in AJAX cart fragments where wp_footer doesn't fire.
+			$slug = sanitize_title( $code );
+			self::$hidden_coupon_codes[] = $slug;
+			return '<style>.coupon-' . esc_attr( $slug ) . '{display:none!important}</style>';
 		}
 
 		return $coupon_html;
