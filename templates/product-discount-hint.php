@@ -22,11 +22,14 @@ if ( empty( $tiers ) ) {
 	</div>
 	<div class="cm-discount-hint__tiers">
 		<?php foreach ( $tiers as $i => $tier ) : ?>
-			<div class="cm-discount-hint__tier <?php echo $i === count( $tiers ) - 1 ? 'cm-discount-hint__tier--best' : ''; ?>">
+			<div class="cm-discount-hint__tier <?php echo $i === count( $tiers ) - 1 ? 'cm-discount-hint__tier--best' : ''; ?>"
+				data-min-packs="<?php echo esc_attr( $tier['min_packs'] ); ?>"
+				data-rate="<?php echo esc_attr( $tier['rate'] ); ?>">
 				<span class="cm-discount-hint__tier-packs"><?php echo esc_html( $tier['min_packs'] ); ?>+</span>
 				<span class="cm-discount-hint__tier-label"><?php esc_html_e( 'packs', 'cm-discount-engine' ); ?></span>
 				<span class="cm-discount-hint__tier-rate">-<?php echo esc_html( $tier['rate'] ); ?>%</span>
 			</div>
 		<?php endforeach; ?>
 	</div>
+	<div class="cm-discount-hint__upsell"></div>
 </div>

@@ -1,0 +1,134 @@
+/**
+ * CM Discount Engine — Dynamic product page upsell.
+ *
+ * Reads cmUpsellData (via wp_localize_script):
+ *   .tiers     — array of { min_packs: int, rate: number }
+ *   .cartPacks — int (eligible packs already in cart)
+ */
+(function () {
+	'use strict';
+
+	var data = window.cmUpsellData;
+	if ( ! data || ! data.tiers || ! data.tiers.length ) {
+		return;
+	}
+
+	var tiers     = data.tiers;
+	var cartPacks = parseInt( data.cartPacks, 10 ) || 0;
+	var qtyInput  = document.querySelector( 'input[name="quantity"]' );
+	var hint      = document.querySelector( '.cm-discount-hint' );
+
+	if ( ! qtyInput || ! hint ) {
+		return;
+	}
+
+	var upsellBox = hint.querySelector( '.cm-discount-hint__upsell' );
+	var tierEls   = hint.querySelectorAll( '.cm-discount-hint__tier' );
+
+	// Sort tiers ascending by min_packs.
+	tiers.sort( function ( a, b ) {
+		return a.min_packs - b.min_packs;
+	} );
+
+	function findCurrentTier( total ) {
+		var found = null;
+		for ( var i = 0; i < tiers.length; i++ ) {
+			if ( total >= tiers[ i ].min_packs ) {
+				found = tiers[ i ];
+			}
+		}
+		return found;
+	}
+
+	function findNextTier( total ) {
+		for ( var i = 0; i < tiers.length; i++ ) {
+			if ( tiers[ i ].min_packs > total ) {
+				return tiers[ i ];
+			}
+		}
+		return null;
+	}
+
+	var targetQty = 0; // updated by update(), used by click handler
+
+	function update() {
+		var inputQty   = parseInt( qtyInput.value, 10 ) || 1;
+		var totalPacks = cartPacks + inputQty;
+
+		var currentTier = findCurrentTier( totalPacks );
+		var nextTier    = findNextTier( totalPacks );
+
+		// --- Highlight tiers ---
+		for ( var i = 0; i < tierEls.length; i++ ) {
+			tierEls[ i ].classList.remove( 'cm-discount-hint__tier--current', 'cm-discount-hint__tier--next' );
+		}
+
+		if ( currentTier ) {
+			for ( var i = 0; i < tierEls.length; i++ ) {
+				if ( parseInt( tierEls[ i ].getAttribute( 'data-min-packs' ), 10 ) === currentTier.min_packs ) {
+					tierEls[ i ].classList.add( 'cm-discount-hint__tier--current' );
+				}
+			}
+		}
+
+		if ( nextTier ) {
+			for ( var i = 0; i < tierEls.length; i++ ) {
+				if ( parseInt( tierEls[ i ].getAttribute( 'data-min-packs' ), 10 ) === nextTier.min_packs ) {
+					tierEls[ i ].classList.add( 'cm-discount-hint__tier--next' );
+				}
+			}
+		}
+
+		// --- Upsell message ---
+		if ( ! upsellBox ) {
+			return;
+		}
+
+		if ( ! nextTier ) {
+			upsellBox.style.display = 'none';
+			upsellBox.innerHTML = '';
+			return;
+		}
+
+		var packsNeeded  = nextTier.min_packs - totalPacks;
+		var packWord     = packsNeeded === 1 ? 'pack' : 'packs';
+		var currentRate  = currentTier ? currentTier.rate : 0;
+
+		// Target qty for the action link
+		targetQty = nextTier.min_packs - cartPacks;
+
+		var msg;
+		if ( currentRate > 0 ) {
+			msg = 'Add ' + packsNeeded + ' more ' + packWord + ' and get &minus;' + nextTier.rate + '% instead of &minus;' + currentRate + '%';
+		} else {
+			msg = 'Add ' + packsNeeded + ' more ' + packWord + ' and get &minus;' + nextTier.rate + '% discount';
+		}
+
+		var linkLabel = 'Set ' + targetQty + ' pack' + ( targetQty !== 1 ? 's' : '' ) + ' →';
+		var linkHtml  = ' <a href="#" class="cm-discount-hint__upsell-action">' + linkLabel + '</a>';
+
+		upsellBox.innerHTML = '<span class="cm-discount-hint__upsell-icon">&#9650;</span> ' + msg + linkHtml;
+		upsellBox.style.display = '';
+	}
+
+	// Click handler for the action link (event delegation).
+	if ( upsellBox ) {
+		upsellBox.addEventListener( 'click', function ( e ) {
+			var link = e.target.closest( '.cm-discount-hint__upsell-action' );
+			if ( ! link ) {
+				return;
+			}
+			e.preventDefault();
+			qtyInput.value = targetQty;
+			qtyInput.dispatchEvent( new Event( 'change', { bubbles: true } ) );
+			qtyInput.focus();
+		} );
+	}
+
+	// Listen for changes.
+	qtyInput.addEventListener( 'input', update );
+	qtyInput.addEventListener( 'change', update );
+
+	// Initial render.
+	update();
+})();

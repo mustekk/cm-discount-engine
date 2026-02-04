@@ -140,3 +140,76 @@
 .cm-shipping-hint td {
 	padding: 2px 0 !important;
 }
+
+/* ─── Product page: dynamic upsell message ─── */
+.cm-discount-hint__upsell {
+	margin-top: 12px !important;
+	padding: 10px 14px !important;
+	background: #f0fdf4 !important;
+	border: 1px dashed #4ade80 !important;
+	border-radius: 6px !important;
+	font-size: 13px !important;
+	font-weight: 500 !important;
+	color: #166534 !important;
+	line-height: 1.4 !important;
+	text-align: center !important;
+}
+
+.cm-discount-hint__upsell:empty {
+	display: none !important;
+}
+
+.cm-discount-hint__upsell-icon {
+	color: #16a34a !important;
+	font-size: 11px !important;
+}
+
+/* ─── Product page: upsell action link ─── */
+.cm-discount-hint__upsell-action {
+	display: inline-block !important;
+	margin-left: 6px !important;
+	font-weight: 700 !important;
+	font-size: 13px !important;
+	color: #15803d !important;
+	text-decoration: underline !important;
+	cursor: pointer !important;
+}
+
+.cm-discount-hint__upsell-action:hover {
+	color: #166534 !important;
+	text-decoration-thickness: 2px !important;
+}
+
+/* ─── Cart: upsell action link ─── */
+.cm-upsell-message__action {
+	display: inline-block;
+	margin-left: 6px;
+	font-weight: 700;
+	font-size: 13px;
+	color: #92400e;
+	text-decoration: underline;
+	cursor: pointer;
+	white-space: nowrap;
+}
+
+.cm-upsell-message__action:hover {
+	color: #78350f;
+	text-decoration-thickness: 2px;
+}
+
+/* ─── Product page: tier highlighting ─── */
+.cm-discount-hint__tier--current {
+	background: #dcfce7 !important;
+	border-color: #4ade80 !important;
+	box-shadow: 0 0 0 2px rgba(74, 222, 128, 0.3) !important;
+}
+
+.cm-discount-hint__tier--next {
+	border: 1px dashed #f59e0b !important;
+	animation: cm-pulse-next 1.5s ease-in-out infinite !important;
+}
+
+@keyframes cm-pulse-next {
+	0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.3); }
+	50% { box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.15); }
+}

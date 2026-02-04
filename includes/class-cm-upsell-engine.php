@@ -111,12 +111,37 @@ class CM_Upsell_Engine {
 		$upsell = self::get_cart_upsell( WC()->cart );
 
 		if ( $upsell ) {
-			$message = $upsell;
+			$message  = $upsell;
+			$shop_url = self::get_eligible_shop_url();
 			$template = self::locate_template( 'upsell-message.php' );
 			if ( $template ) {
 				include $template;
 			}
 		}
+	}
+
+	/**
+	 * Get URL to the first eligible product category, or fall back to the shop page.
+	 *
+	 * @return string
+	 */
+	private static function get_eligible_shop_url() {
+		$eligible_cats = get_terms( array(
+			'taxonomy'   => 'product_cat',
+			'meta_key'   => 'cm_discount_eligible',
+			'meta_value' => 'yes',
+			'number'     => 1,
+			'fields'     => 'ids',
+		) );
+
+		if ( ! empty( $eligible_cats ) && ! is_wp_error( $eligible_cats ) ) {
+			$link = get_term_link( (int) $eligible_cats[0], 'product_cat' );
+			if ( ! is_wp_error( $link ) ) {
+				return $link;
+			}
+		}
+
+		return wc_get_page_permalink( 'shop' );
 	}
 
 	/**
@@ -228,6 +253,18 @@ class CM_Upsell_Engine {
 		if ( $template ) {
 			include $template;
 		}
+	}
+
+	/**
+	 * Get the count of eligible packs currently in the cart.
+	 *
+	 * @return int
+	 */
+	public static function get_cart_eligible_packs() {
+		if ( ! WC()->cart || WC()->cart->is_empty() ) {
+			return 0;
+		}
+		return CM_Discount_Types::count_eligible_packs( WC()->cart );
 	}
 
 	/**

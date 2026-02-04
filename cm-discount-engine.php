@@ -2,7 +2,7 @@
 /**
  * Plugin Name: CM Discount Engine
  * Description: Coffee Madman — автоматическая система скидок (first order, quantity tiers, promo codes) с выбором лучшей скидки.
- * Version: 1.0.5
+ * Version: 1.2.0
  * Author: Coffee Madman
  * Requires at least: 6.0
  * Requires PHP: 7.4
@@ -13,7 +13,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'CM_DE_VERSION', '1.0.5' );
+define( 'CM_DE_VERSION', '1.2.0' );
 define( 'CM_DE_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'CM_DE_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'CM_DE_PLUGIN_FILE', __FILE__ );
@@ -95,7 +95,7 @@ add_action( 'plugins_loaded', function () {
 		return $settings;
 	} );
 
-	// Enqueue frontend CSS
+	// Enqueue frontend CSS & JS
 	add_action( 'wp_enqueue_scripts', function () {
 		if ( is_product() || is_cart() || is_checkout() ) {
 			wp_enqueue_style(
@@ -104,6 +104,31 @@ add_action( 'plugins_loaded', function () {
 				array(),
 				CM_DE_VERSION
 			);
+		}
+
+		// Product page: dynamic upsell JS
+		if ( is_product() && 'yes' === get_option( 'cm_quantity_enabled', 'yes' ) ) {
+			wp_enqueue_script(
+				'cm-product-upsell',
+				CM_DE_PLUGIN_URL . 'assets/js/cm-product-upsell.js',
+				array(),
+				CM_DE_VERSION,
+				true
+			);
+
+			$tiers = CM_Upsell_Engine::get_product_hint_tiers();
+			$js_tiers = array();
+			foreach ( $tiers as $tier ) {
+				$js_tiers[] = array(
+					'min_packs' => (int) $tier['min_packs'],
+					'rate'      => (float) $tier['rate'],
+				);
+			}
+
+			wp_localize_script( 'cm-product-upsell', 'cmUpsellData', array(
+				'tiers'     => $js_tiers,
+				'cartPacks' => CM_Upsell_Engine::get_cart_eligible_packs(),
+			) );
 		}
 	} );
 } );

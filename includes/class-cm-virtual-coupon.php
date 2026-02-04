@@ -9,6 +9,9 @@ class CM_Virtual_Coupon {
 
 	const COUPON_CODE = 'cm-auto-discount';
 
+	/** @var string[] Promo code slugs to hide via CSS in wp_footer. */
+	private static $hidden_coupon_codes = array();
+
 	public static function init() {
 		// Virtual coupon data provider
 		add_filter( 'woocommerce_get_shop_coupon_data', array( __CLASS__, 'virtual_coupon_data' ), 10, 2 );
@@ -30,6 +33,9 @@ class CM_Virtual_Coupon {
 
 		// Validate virtual and promo coupons
 		add_filter( 'woocommerce_coupon_is_valid', array( __CLASS__, 'validate_coupon' ), 10, 2 );
+
+		// Output CSS to hide dummy coupon rows
+		add_action( 'wp_footer', array( __CLASS__, 'hide_dummy_coupon_css' ) );
 	}
 
 	/**
@@ -254,10 +260,26 @@ class CM_Virtual_Coupon {
 		// Hide dummy promo code coupons (zero-value intercepts)
 		$promo = CM_Promo_Codes::validate_code( $code );
 		if ( $promo && $coupon->get_amount() == 0 ) {
+			// Track the code to hide via wp_footer CSS output
+			self::$hidden_coupon_codes[] = sanitize_title( $code );
 			return '';
 		}
 
 		return $coupon_html;
+	}
+
+	/**
+	 * Output CSS in wp_footer to hide dummy promo coupon rows.
+	 */
+	public static function hide_dummy_coupon_css() {
+		if ( empty( self::$hidden_coupon_codes ) ) {
+			return;
+		}
+		$selectors = array();
+		foreach ( array_unique( self::$hidden_coupon_codes ) as $slug ) {
+			$selectors[] = '.coupon-' . esc_attr( $slug );
+		}
+		echo '<style>' . implode( ',', $selectors ) . '{display:none!important}</style>';
 	}
 
 	/**
