@@ -236,6 +236,7 @@ class CM_Upsell_Engine {
 
 	/**
 	 * Show applied discount explanation in cart.
+	 * If a promo code was entered but lost to a better discount, show a "replaced" note.
 	 */
 	public static function cart_discount_notice() {
 		if ( ! WC()->session ) {
@@ -248,7 +249,19 @@ class CM_Upsell_Engine {
 			return;
 		}
 
-		$notice   = $discount['label'];
+		$notice        = $discount['label'];
+		$replaced_info = null;
+
+		// Check if a promo code was entered but lost to a better discount
+		if ( $discount['type'] !== 'promo' && ! empty( $discount['all'] ) ) {
+			foreach ( $discount['all'] as $candidate ) {
+				if ( $candidate['type'] === 'promo' ) {
+					$replaced_info = $candidate;
+					break;
+				}
+			}
+		}
+
 		$template = self::locate_template( 'cart-discount-notice.php' );
 		if ( $template ) {
 			include $template;

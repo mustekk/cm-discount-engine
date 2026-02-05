@@ -199,6 +199,10 @@ class CM_Virtual_Coupon {
 			if ( ! empty( $discount['promo_id'] ) ) {
 				$order->update_meta_data( 'cm_promo_id', $discount['promo_id'] );
 			}
+
+			if ( $discount['type'] === 'subscription' ) {
+				$order->update_meta_data( 'cm_is_subscription', 'yes' );
+			}
 		}
 	}
 

@@ -97,6 +97,36 @@ class CM_Discount_Types {
 		return CM_Promo_Codes::validate_code( $code );
 	}
 
+	/**
+	 * Check if the cart is eligible for subscription discount.
+	 *
+	 * @param WC_Cart $cart
+	 * @return bool
+	 */
+	public static function is_eligible_subscription( $cart ) {
+		if ( 'yes' !== get_option( 'cm_subscription_enabled', 'no' ) ) {
+			return false;
+		}
+		return CM_Subscription_Floor::is_subscription_cart( $cart );
+	}
+
+	/**
+	 * Calculate subscription discount: floor = max(base_rate, quantity_tier_rate).
+	 *
+	 * @param float   $eligible_total
+	 * @param WC_Cart $cart
+	 * @return array [ 'rate' => float, 'amount' => float ]
+	 */
+	public static function calculate_subscription( $eligible_total, $cart ) {
+		$rate   = CM_Subscription_Floor::get_subscription_rate( $cart );
+		$amount = $eligible_total * ( $rate / 100 );
+
+		return array(
+			'rate'   => $rate,
+			'amount' => round( $amount, 2 ),
+		);
+	}
+
 	// ─── Calculation ───────────────────────────────────────────
 
 	/**

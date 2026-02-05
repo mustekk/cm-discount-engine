@@ -13,10 +13,12 @@
 		return;
 	}
 
-	var tiers     = data.tiers;
-	var cartPacks = parseInt( data.cartPacks, 10 ) || 0;
-	var qtyInput  = document.querySelector( 'input[name="quantity"]' );
-	var hint      = document.querySelector( '.cm-discount-hint' );
+	var tiers            = data.tiers;
+	var cartPacks        = parseInt( data.cartPacks, 10 ) || 0;
+	var subscriptionRate = parseInt( data.subscriptionRate, 10 ) || 0;
+	var isSubscribe      = false;
+	var qtyInput         = document.querySelector( 'input[name="quantity"]' );
+	var hint             = document.querySelector( '.cm-discount-hint' );
 
 	if ( ! qtyInput || ! hint ) {
 		return;
@@ -107,7 +109,16 @@
 		var linkLabel = 'Set ' + targetQty + ' pack' + ( targetQty !== 1 ? 's' : '' ) + ' →';
 		var linkHtml  = ' <a href="#" class="cm-discount-hint__upsell-action">' + linkLabel + '</a>';
 
-		upsellBox.innerHTML = '<span class="cm-discount-hint__upsell-icon">&#9650;</span> ' + msg + linkHtml;
+		// If subscribe mode and subscription rate is higher, show floor info
+		var subNote = '';
+		if ( isSubscribe && subscriptionRate > 0 ) {
+			var effectiveRate = Math.max( subscriptionRate, currentRate );
+			if ( effectiveRate > currentRate || ( currentRate === 0 && subscriptionRate > 0 ) ) {
+				subNote = '<br><span class="cm-discount-hint__upsell-icon">&#9733;</span> Coffee Club: &minus;' + effectiveRate + '% guaranteed';
+			}
+		}
+
+		upsellBox.innerHTML = '<span class="cm-discount-hint__upsell-icon">&#9650;</span> ' + msg + linkHtml + subNote;
 		upsellBox.style.display = '';
 	}
 
@@ -124,6 +135,12 @@
 			qtyInput.focus();
 		} );
 	}
+
+	// Listen for subscription toggle changes.
+	document.addEventListener( 'cm_subscription_changed', function ( e ) {
+		isSubscribe = e.detail && e.detail.subscribe;
+		update();
+	} );
 
 	// Listen for changes (native events — manual typing, etc.).
 	qtyInput.addEventListener( 'input', update );

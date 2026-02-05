@@ -26,6 +26,7 @@ class CM_Admin_Promo_Codes {
 		$new['title']       = __( 'Code', 'cm-discount-engine' );
 		$new['cm_type']     = __( 'Type', 'cm-discount-engine' );
 		$new['cm_value']    = __( 'Value', 'cm-discount-engine' );
+		$new['cm_referral'] = __( 'Referral', 'cm-discount-engine' );
 		$new['cm_expires']  = __( 'Expires', 'cm-discount-engine' );
 		$new['cm_usage']    = __( 'Usage', 'cm-discount-engine' );
 		$new['date']        = $columns['date'];
@@ -49,6 +50,18 @@ class CM_Admin_Promo_Codes {
 					echo '€' . esc_html( number_format( (float) $value, 2 ) );
 				} else {
 					echo esc_html( $value ) . '%';
+				}
+				break;
+
+			case 'cm_referral':
+				$is_referral = get_post_meta( $post_id, '_cm_is_referral', true );
+				if ( $is_referral === 'yes' ) {
+					$referrer_id = get_post_meta( $post_id, '_cm_referrer_user_id', true );
+					$user = $referrer_id ? get_userdata( $referrer_id ) : null;
+					$name = $user ? $user->display_name : '#' . $referrer_id;
+					echo '<span style="color:#2563eb; font-weight:600;">&#9733; ' . esc_html( $name ) . '</span>';
+				} else {
+					echo '—';
 				}
 				break;
 
@@ -101,7 +114,9 @@ class CM_Admin_Promo_Codes {
 		$value       = get_post_meta( $post->ID, '_cm_promo_value', true ) ?: '';
 		$expires     = get_post_meta( $post->ID, '_cm_promo_expires', true ) ?: '';
 		$usage_limit = get_post_meta( $post->ID, '_cm_promo_usage_limit', true ) ?: '';
-		$usage_count = (int) get_post_meta( $post->ID, '_cm_promo_usage_count', true );
+		$usage_count   = (int) get_post_meta( $post->ID, '_cm_promo_usage_count', true );
+		$is_referral   = get_post_meta( $post->ID, '_cm_is_referral', true ) ?: 'no';
+		$referrer_user = get_post_meta( $post->ID, '_cm_referrer_user_id', true ) ?: '';
 		?>
 		<table class="form-table">
 			<tr>
@@ -140,6 +155,22 @@ class CM_Admin_Promo_Codes {
 					<strong><?php echo esc_html( $usage_count ); ?></strong> <?php esc_html_e( 'times', 'cm-discount-engine' ); ?>
 				</td>
 			</tr>
+			<tr>
+				<th><label for="cm_is_referral"><?php esc_html_e( 'Referral Code', 'cm-discount-engine' ); ?></label></th>
+				<td>
+					<label>
+						<input type="checkbox" name="cm_is_referral" id="cm_is_referral" value="yes" <?php checked( $is_referral, 'yes' ); ?>>
+						<?php esc_html_e( 'This is a referral/influencer promo code', 'cm-discount-engine' ); ?>
+					</label>
+				</td>
+			</tr>
+			<tr>
+				<th><label for="cm_referrer_user_id"><?php esc_html_e( 'Referrer User ID', 'cm-discount-engine' ); ?></label></th>
+				<td>
+					<input type="number" name="cm_referrer_user_id" id="cm_referrer_user_id" value="<?php echo esc_attr( $referrer_user ); ?>" min="0" step="1" style="width:100px;">
+					<p class="description"><?php esc_html_e( 'WordPress user ID of the referrer/influencer who owns this code.', 'cm-discount-engine' ); ?></p>
+				</td>
+			</tr>
 		</table>
 		<?php
 	}
@@ -170,6 +201,19 @@ class CM_Admin_Promo_Codes {
 		foreach ( $fields as $post_key => $meta_key ) {
 			if ( isset( $_POST[ $post_key ] ) ) {
 				update_post_meta( $post_id, $meta_key, sanitize_text_field( $_POST[ $post_key ] ) );
+			}
+		}
+
+		// Referral fields
+		$is_referral = isset( $_POST['cm_is_referral'] ) ? 'yes' : 'no';
+		update_post_meta( $post_id, '_cm_is_referral', $is_referral );
+
+		if ( isset( $_POST['cm_referrer_user_id'] ) ) {
+			$referrer_id = absint( $_POST['cm_referrer_user_id'] );
+			if ( $referrer_id > 0 ) {
+				update_post_meta( $post_id, '_cm_referrer_user_id', $referrer_id );
+			} else {
+				delete_post_meta( $post_id, '_cm_referrer_user_id' );
 			}
 		}
 

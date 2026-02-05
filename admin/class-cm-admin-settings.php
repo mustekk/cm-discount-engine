@@ -24,9 +24,13 @@ class CM_Admin_Settings extends WC_Settings_Page {
 	 */
 	public function get_sections() {
 		return array(
-			''           => __( 'General', 'cm-discount-engine' ),
-			'quantity'   => __( 'Quantity Tiers', 'cm-discount-engine' ),
-			'categories' => __( 'Category Eligibility', 'cm-discount-engine' ),
+			''             => __( 'General', 'cm-discount-engine' ),
+			'quantity'     => __( 'Quantity Tiers', 'cm-discount-engine' ),
+			'categories'   => __( 'Category Eligibility', 'cm-discount-engine' ),
+			'subscription' => __( 'Subscription (Coffee Club)', 'cm-discount-engine' ),
+			'bonus'        => __( 'Bonus Program', 'cm-discount-engine' ),
+			'referral'     => __( 'Referral Program', 'cm-discount-engine' ),
+			'catalog'      => __( 'Catalog Tiers', 'cm-discount-engine' ),
 		);
 	}
 
@@ -39,6 +43,14 @@ class CM_Admin_Settings extends WC_Settings_Page {
 				return $this->get_quantity_settings();
 			case 'categories':
 				return $this->get_category_settings();
+			case 'subscription':
+				return $this->get_subscription_settings();
+			case 'bonus':
+				return $this->get_bonus_settings();
+			case 'referral':
+				return $this->get_referral_settings();
+			case 'catalog':
+				return $this->get_catalog_settings();
 			default:
 				return $this->get_general_settings();
 		}
@@ -146,6 +158,198 @@ class CM_Admin_Settings extends WC_Settings_Page {
 			array(
 				'type' => 'sectionend',
 				'id'   => 'cm_category_options',
+			),
+		);
+	}
+
+	/**
+	 * Subscription settings.
+	 */
+	private function get_subscription_settings() {
+		return array(
+			array(
+				'title' => __( 'Subscription (Coffee Club)', 'cm-discount-engine' ),
+				'type'  => 'title',
+				'desc'  => __( 'Configure the subscription discount. Floor rate = max(subscription rate, quantity tier rate).', 'cm-discount-engine' ),
+				'id'    => 'cm_subscription_options',
+			),
+			array(
+				'title'   => __( 'Enable Subscription Discount', 'cm-discount-engine' ),
+				'desc'    => __( 'Enable "Subscribe & Save" toggle on product pages', 'cm-discount-engine' ),
+				'id'      => 'cm_subscription_enabled',
+				'default' => 'no',
+				'type'    => 'checkbox',
+			),
+			array(
+				'title'             => __( 'Subscription Rate (%)', 'cm-discount-engine' ),
+				'desc'              => __( 'Base subscription discount rate. The actual rate will be the max of this and the applicable quantity tier.', 'cm-discount-engine' ),
+				'id'                => 'cm_subscription_rate',
+				'default'           => '20',
+				'type'              => 'number',
+				'custom_attributes' => array(
+					'min'  => '0',
+					'max'  => '100',
+					'step' => '1',
+				),
+				'css'               => 'width: 80px;',
+			),
+			array(
+				'type' => 'sectionend',
+				'id'   => 'cm_subscription_options',
+			),
+		);
+	}
+
+	/**
+	 * Bonus program settings.
+	 */
+	private function get_bonus_settings() {
+		return array(
+			array(
+				'title' => __( 'Bonus Program', 'cm-discount-engine' ),
+				'type'  => 'title',
+				'desc'  => __( 'Accrues a bonus after each completed order. Bonus is applied as a separate coupon (stacks with Resolver discount).', 'cm-discount-engine' ),
+				'id'    => 'cm_bonus_options',
+			),
+			array(
+				'title'   => __( 'Enable Bonus Program', 'cm-discount-engine' ),
+				'desc'    => __( 'Enable bonus accrual and application', 'cm-discount-engine' ),
+				'id'      => 'cm_bonus_enabled',
+				'default' => 'no',
+				'type'    => 'checkbox',
+			),
+			array(
+				'title'             => __( 'Bonus Rate (%)', 'cm-discount-engine' ),
+				'desc'              => __( 'Percentage of net order amount (after discounts, excl. shipping) accrued as bonus.', 'cm-discount-engine' ),
+				'id'                => 'cm_bonus_rate',
+				'default'           => '5',
+				'type'              => 'number',
+				'custom_attributes' => array(
+					'min'  => '0',
+					'max'  => '100',
+					'step' => '1',
+				),
+				'css'               => 'width: 80px;',
+			),
+			array(
+				'title'             => __( 'Bonus Expiry (days)', 'cm-discount-engine' ),
+				'desc'              => __( 'Number of days before bonus balance expires. 0 = no expiry.', 'cm-discount-engine' ),
+				'id'                => 'cm_bonus_expiry_days',
+				'default'           => '60',
+				'type'              => 'number',
+				'custom_attributes' => array(
+					'min'  => '0',
+					'step' => '1',
+				),
+				'css'               => 'width: 80px;',
+			),
+			array(
+				'title'             => __( 'Minimum Order for Bonus (€)', 'cm-discount-engine' ),
+				'desc'              => __( 'Minimum order total to accrue bonus. 0 = no minimum.', 'cm-discount-engine' ),
+				'id'                => 'cm_bonus_min_order',
+				'default'           => '0',
+				'type'              => 'number',
+				'custom_attributes' => array(
+					'min'  => '0',
+					'step' => '1',
+				),
+				'css'               => 'width: 80px;',
+			),
+			array(
+				'type' => 'sectionend',
+				'id'   => 'cm_bonus_options',
+			),
+		);
+	}
+
+	/**
+	 * Referral program settings.
+	 */
+	private function get_referral_settings() {
+		return array(
+			array(
+				'title' => __( 'Referral Program', 'cm-discount-engine' ),
+				'type'  => 'title',
+				'desc'  => __( 'Track referral promo codes and commissions. Referral attribution is saved even when the promo loses to a better discount.', 'cm-discount-engine' ),
+				'id'    => 'cm_referral_options',
+			),
+			array(
+				'title'   => __( 'Enable Referral Program', 'cm-discount-engine' ),
+				'desc'    => __( 'Enable referral tracking and commissions', 'cm-discount-engine' ),
+				'id'      => 'cm_referral_enabled',
+				'default' => 'no',
+				'type'    => 'checkbox',
+			),
+			array(
+				'title'             => __( 'Commission Rate (%)', 'cm-discount-engine' ),
+				'desc'              => __( 'Percentage of net order revenue paid as referral commission.', 'cm-discount-engine' ),
+				'id'                => 'cm_referral_rate',
+				'default'           => '10',
+				'type'              => 'number',
+				'custom_attributes' => array(
+					'min'  => '0',
+					'max'  => '100',
+					'step' => '1',
+				),
+				'css'               => 'width: 80px;',
+			),
+			array(
+				'title'             => __( 'Subscription Payment Limit', 'cm-discount-engine' ),
+				'desc'              => __( 'For subscription orders, number of recurring payments that generate commission. 0 = unlimited.', 'cm-discount-engine' ),
+				'id'                => 'cm_referral_sub_payments',
+				'default'           => '3',
+				'type'              => 'number',
+				'custom_attributes' => array(
+					'min'  => '0',
+					'step' => '1',
+				),
+				'css'               => 'width: 80px;',
+			),
+			array(
+				'type' => 'sectionend',
+				'id'   => 'cm_referral_options',
+			),
+		);
+	}
+
+	/**
+	 * Catalog tier settings.
+	 */
+	private function get_catalog_settings() {
+		return array(
+			array(
+				'title' => __( 'Catalog Tiers', 'cm-discount-engine' ),
+				'type'  => 'title',
+				'desc'  => __( 'Define price thresholds for visual tier grouping on shop/category pages (gap between price groups).', 'cm-discount-engine' ),
+				'id'    => 'cm_catalog_options',
+			),
+			array(
+				'title'             => __( 'Entry Max Price (€)', 'cm-discount-engine' ),
+				'desc'              => __( 'Products at or below this price are "Entry" tier.', 'cm-discount-engine' ),
+				'id'                => 'cm_entry_max_price',
+				'default'           => '12',
+				'type'              => 'number',
+				'custom_attributes' => array(
+					'min'  => '0',
+					'step' => '1',
+				),
+				'css'               => 'width: 80px;',
+			),
+			array(
+				'title'             => __( 'Core Max Price (€)', 'cm-discount-engine' ),
+				'desc'              => __( 'Products above Entry and at or below this price are "Core" tier. Above this = "Premium".', 'cm-discount-engine' ),
+				'id'                => 'cm_core_max_price',
+				'default'           => '18',
+				'type'              => 'number',
+				'custom_attributes' => array(
+					'min'  => '0',
+					'step' => '1',
+				),
+				'css'               => 'width: 80px;',
+			),
+			array(
+				'type' => 'sectionend',
+				'id'   => 'cm_catalog_options',
 			),
 		);
 	}

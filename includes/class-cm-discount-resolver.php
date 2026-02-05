@@ -11,9 +11,10 @@ class CM_Discount_Resolver {
 	 * Priority map: lower number = higher priority (wins on tie).
 	 */
 	private static $priority = array(
-		'quantity'    => 2,
-		'promo'       => 3,
-		'first_order' => 4,
+		'subscription' => 1,
+		'quantity'     => 2,
+		'promo'        => 3,
+		'first_order'  => 4,
 	);
 
 	/**
@@ -35,6 +36,11 @@ class CM_Discount_Resolver {
 		$candidates = array();
 
 		// ─── Layer 1: Eligibility ─────────────────────────────
+
+		// Subscription (Coffee Club)
+		if ( CM_Discount_Types::is_eligible_subscription( $cart ) ) {
+			$candidates[] = 'subscription';
+		}
 
 		// First order
 		if ( CM_Discount_Types::is_eligible_first_order( $user_id, $email ) ) {
@@ -66,6 +72,16 @@ class CM_Discount_Resolver {
 
 		foreach ( $candidates as $type ) {
 			switch ( $type ) {
+				case 'subscription':
+					$calc = CM_Discount_Types::calculate_subscription( $eligible_total, $cart );
+					$discounts[] = array(
+						'type'   => 'subscription',
+						'rate'   => $calc['rate'],
+						'amount' => $calc['amount'],
+						'label'  => sprintf( 'Coffee Club subscription (-%s%%)', $calc['rate'] ),
+					);
+					break;
+
 				case 'first_order':
 					$calc = CM_Discount_Types::calculate_first_order( $eligible_total );
 					$discounts[] = array(
@@ -150,6 +166,21 @@ class CM_Discount_Resolver {
 		}
 
 		$discounts = array();
+
+		// Subscription
+		if ( CM_Discount_Types::is_eligible_subscription( $cart ) ) {
+			$qty_tier  = CM_Discount_Types::get_quantity_tier( $future_packs );
+			$qty_rate  = $qty_tier ? (float) $qty_tier['rate'] : 0;
+			$base_rate = (float) get_option( 'cm_subscription_rate', 20 );
+			$sub_rate  = max( $base_rate, $qty_rate );
+			$sub_amount = round( $future_total * ( $sub_rate / 100 ), 2 );
+			$discounts[] = array(
+				'type'   => 'subscription',
+				'rate'   => $sub_rate,
+				'amount' => $sub_amount,
+				'label'  => sprintf( 'Coffee Club (-%s%%)', $sub_rate ),
+			);
+		}
 
 		// First order
 		if ( CM_Discount_Types::is_eligible_first_order( $user_id, $email ) ) {

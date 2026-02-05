@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name: CM Discount Engine
- * Description: Coffee Madman — автоматическая система скидок (first order, quantity tiers, promo codes) с выбором лучшей скидки.
- * Version: 1.2.1
+ * Description: Coffee Madman — система скидок (first order, quantity tiers, promo codes, subscription, bonus, referral) + flavor attributes, reorder, catalog tiers.
+ * Version: 2.0.2
  * Author: Coffee Madman
  * Requires at least: 6.0
  * Requires PHP: 7.4
@@ -13,7 +13,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'CM_DE_VERSION', '1.2.1' );
+define( 'CM_DE_VERSION', '2.0.2' );
 define( 'CM_DE_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'CM_DE_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'CM_DE_PLUGIN_FILE', __FILE__ );
@@ -28,9 +28,10 @@ add_action( 'before_woocommerce_init', function () {
 } );
 
 /**
- * Activation hook — set default options.
+ * Activation hook — set default options + create tables.
  */
 function cm_de_activate() {
+	// Phase 1 defaults
 	if ( false === get_option( 'cm_first_order_enabled' ) ) {
 		add_option( 'cm_first_order_enabled', 'yes' );
 	}
@@ -53,6 +54,51 @@ function cm_de_activate() {
 	if ( false === get_option( 'cm_free_shipping_threshold' ) ) {
 		add_option( 'cm_free_shipping_threshold', 30 );
 	}
+
+	// Phase 2 defaults — Subscription
+	if ( false === get_option( 'cm_subscription_enabled' ) ) {
+		add_option( 'cm_subscription_enabled', 'no' );
+	}
+	if ( false === get_option( 'cm_subscription_rate' ) ) {
+		add_option( 'cm_subscription_rate', 20 );
+	}
+
+	// Phase 2 defaults — Bonus
+	if ( false === get_option( 'cm_bonus_enabled' ) ) {
+		add_option( 'cm_bonus_enabled', 'no' );
+	}
+	if ( false === get_option( 'cm_bonus_rate' ) ) {
+		add_option( 'cm_bonus_rate', 5 );
+	}
+	if ( false === get_option( 'cm_bonus_expiry_days' ) ) {
+		add_option( 'cm_bonus_expiry_days', 60 );
+	}
+	if ( false === get_option( 'cm_bonus_min_order' ) ) {
+		add_option( 'cm_bonus_min_order', 0 );
+	}
+
+	// Phase 2 defaults — Referral
+	if ( false === get_option( 'cm_referral_enabled' ) ) {
+		add_option( 'cm_referral_enabled', 'no' );
+	}
+	if ( false === get_option( 'cm_referral_rate' ) ) {
+		add_option( 'cm_referral_rate', 10 );
+	}
+	if ( false === get_option( 'cm_referral_sub_payments' ) ) {
+		add_option( 'cm_referral_sub_payments', 3 );
+	}
+
+	// Phase 2 defaults — Catalog tiers
+	if ( false === get_option( 'cm_entry_max_price' ) ) {
+		add_option( 'cm_entry_max_price', 12 );
+	}
+	if ( false === get_option( 'cm_core_max_price' ) ) {
+		add_option( 'cm_core_max_price', 18 );
+	}
+
+	// Create referral commissions table
+	require_once CM_DE_PLUGIN_DIR . 'includes/class-cm-referral-tracker.php';
+	CM_Referral_Tracker::create_table();
 }
 register_activation_hook( __FILE__, 'cm_de_activate' );
 
@@ -67,25 +113,39 @@ add_action( 'plugins_loaded', function () {
 		return;
 	}
 
-	// Core
+	// ─── Core (Phase 1) ──────────────────────────────────────
 	require_once CM_DE_PLUGIN_DIR . 'includes/class-cm-promo-codes.php';
 	require_once CM_DE_PLUGIN_DIR . 'includes/class-cm-discount-types.php';
 	require_once CM_DE_PLUGIN_DIR . 'includes/class-cm-discount-resolver.php';
 	require_once CM_DE_PLUGIN_DIR . 'includes/class-cm-virtual-coupon.php';
 	require_once CM_DE_PLUGIN_DIR . 'includes/class-cm-upsell-engine.php';
 
-	// Admin — promo codes UI (doesn't depend on WC_Settings_Page)
+	// ─── Phase 2 includes ────────────────────────────────────
+	require_once CM_DE_PLUGIN_DIR . 'includes/class-cm-subscription-floor.php';
+	require_once CM_DE_PLUGIN_DIR . 'includes/class-cm-bonus-program.php';
+	require_once CM_DE_PLUGIN_DIR . 'includes/class-cm-referral-tracker.php';
+	require_once CM_DE_PLUGIN_DIR . 'includes/class-cm-flavor-attributes.php';
+	require_once CM_DE_PLUGIN_DIR . 'includes/class-cm-my-account.php';
+
+	// Admin
 	if ( is_admin() ) {
 		require_once CM_DE_PLUGIN_DIR . 'admin/class-cm-admin-promo-codes.php';
+		require_once CM_DE_PLUGIN_DIR . 'admin/class-cm-admin-referral.php';
 	}
 
-	// Initialize
+	// ─── Initialize ──────────────────────────────────────────
 	CM_Promo_Codes::init();
 	CM_Virtual_Coupon::init();
 	CM_Upsell_Engine::init();
+	CM_Subscription_Floor::init();
+	CM_Bonus_Program::init();
+	CM_Referral_Tracker::init();
+	CM_Flavor_Attributes::init();
+	CM_My_Account::init();
 
 	if ( is_admin() ) {
 		CM_Admin_Promo_Codes::init();
+		CM_Admin_Referral::init();
 	}
 
 	// Admin settings — load via WC filter so WC_Settings_Page is available
@@ -95,9 +155,55 @@ add_action( 'plugins_loaded', function () {
 		return $settings;
 	} );
 
-	// Enqueue frontend CSS & JS
+	// ─── Shipping: hide flat rate when free shipping is available ───
+	add_filter( 'woocommerce_package_rates', function ( $rates ) {
+		$free = false;
+		foreach ( $rates as $rate ) {
+			if ( 'free_shipping' === $rate->method_id ) {
+				$free = true;
+				break;
+			}
+		}
+		if ( $free ) {
+			foreach ( $rates as $id => $rate ) {
+				if ( 'free_shipping' !== $rate->method_id ) {
+					unset( $rates[ $id ] );
+				}
+			}
+		}
+		return $rates;
+	} );
+
+	// ─── Catalog tiers: add CSS classes based on price ──────────
+	add_filter( 'woocommerce_post_class', function ( $classes, $product ) {
+		if ( ! $product ) {
+			return $classes;
+		}
+
+		$price     = (float) $product->get_price();
+		$entry_max = (float) get_option( 'cm_entry_max_price', 12 );
+		$core_max  = (float) get_option( 'cm_core_max_price', 18 );
+
+		if ( $price <= $entry_max ) {
+			$classes[] = 'cm-tier-entry';
+		} elseif ( $price <= $core_max ) {
+			$classes[] = 'cm-tier-core';
+		} else {
+			$classes[] = 'cm-tier-premium';
+		}
+
+		return $classes;
+	}, 10, 2 );
+
+	// ─── Cross-sell in cart ─────────────────────────────────────
+	if ( ! has_action( 'woocommerce_after_cart_table', 'woocommerce_cross_sell_display' ) ) {
+		add_action( 'woocommerce_after_cart_table', 'woocommerce_cross_sell_display' );
+	}
+
+	// ─── Enqueue frontend CSS & JS ──────────────────────────────
 	add_action( 'wp_enqueue_scripts', function () {
-		if ( is_product() || is_cart() || is_checkout() ) {
+		// CSS on product, cart, checkout, shop/category, and account pages
+		if ( is_product() || is_cart() || is_checkout() || is_shop() || is_product_category() || is_account_page() ) {
 			wp_enqueue_style(
 				'cm-discount-frontend',
 				CM_DE_PLUGIN_URL . 'assets/css/cm-discount-frontend.css',
@@ -126,9 +232,51 @@ add_action( 'plugins_loaded', function () {
 			}
 
 			wp_localize_script( 'cm-product-upsell', 'cmUpsellData', array(
-				'tiers'     => $js_tiers,
-				'cartPacks' => CM_Upsell_Engine::get_cart_eligible_packs(),
+				'tiers'            => $js_tiers,
+				'cartPacks'        => CM_Upsell_Engine::get_cart_eligible_packs(),
+				'subscriptionRate' => ( 'yes' === get_option( 'cm_subscription_enabled', 'no' ) )
+					? (int) get_option( 'cm_subscription_rate', 20 )
+					: 0,
 			) );
+		}
+
+		// Product page: subscription toggle JS
+		if ( is_product() && 'yes' === get_option( 'cm_subscription_enabled', 'no' ) ) {
+			wp_enqueue_script(
+				'cm-subscription-toggle',
+				CM_DE_PLUGIN_URL . 'assets/js/cm-subscription-toggle.js',
+				array(),
+				CM_DE_VERSION,
+				true
+			);
+
+			wp_localize_script( 'cm-subscription-toggle', 'cmSubscriptionData', array(
+				'rate' => (int) get_option( 'cm_subscription_rate', 20 ),
+			) );
+		}
+
+		// Shop/category pages: tier gap detection JS
+		if ( is_shop() || is_product_category() ) {
+			wp_register_script( 'cm-tier-gap', '', array(), CM_DE_VERSION, true );
+			wp_enqueue_script( 'cm-tier-gap' );
+			wp_add_inline_script( 'cm-tier-gap', '
+				(function(){
+					var products = document.querySelectorAll(".products .product");
+					if (!products.length) return;
+					var prevTier = "";
+					for (var i = 0; i < products.length; i++) {
+						var el = products[i];
+						var tier = "";
+						if (el.classList.contains("cm-tier-entry")) tier = "entry";
+						else if (el.classList.contains("cm-tier-core")) tier = "core";
+						else if (el.classList.contains("cm-tier-premium")) tier = "premium";
+						if (prevTier && tier && tier !== prevTier) {
+							el.classList.add("cm-tier-gap");
+						}
+						if (tier) prevTier = tier;
+					}
+				})();
+			' );
 		}
 	} );
 } );
