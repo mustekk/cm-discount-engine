@@ -46,6 +46,11 @@ class CM_My_Account {
 			return;
 		}
 
+		// Require logged-in user to prevent guest order enumeration.
+		if ( ! is_user_logged_in() ) {
+			return;
+		}
+
 		$order_id = absint( $_GET['cm_reorder'] );
 
 		if ( ! wp_verify_nonce( isset( $_GET['_wpnonce'] ) ? $_GET['_wpnonce'] : '', 'cm_reorder_' . $order_id ) ) {

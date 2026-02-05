@@ -57,6 +57,12 @@
 			}
 		}
 
+		// Dispatch custom event FIRST so upsell JS has correct isSubscribe state
+		// before the qty change event triggers its update().
+		document.dispatchEvent( new CustomEvent( 'cm_subscription_changed', {
+			detail: { subscribe: isSubscribe }
+		} ) );
+
 		// Sync product qty input with subscription qty
 		if ( isSubscribe && qtyInput ) {
 			var selectedQty = 2;
@@ -68,11 +74,6 @@
 			qtyInput.value = selectedQty;
 			qtyInput.dispatchEvent( new Event( 'change', { bubbles: true } ) );
 		}
-
-		// Dispatch custom event so upsell JS can react
-		document.dispatchEvent( new CustomEvent( 'cm_subscription_changed', {
-			detail: { subscribe: isSubscribe }
-		} ) );
 	}
 
 	// Bind mode radios

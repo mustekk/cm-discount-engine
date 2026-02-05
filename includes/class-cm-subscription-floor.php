@@ -67,16 +67,22 @@ class CM_Subscription_Floor {
 	 */
 	public static function add_subscription_data( $cart_item_data, $product_id, $variation_id ) {
 		if ( isset( $_POST['cm_subscription_mode'] ) && $_POST['cm_subscription_mode'] === 'subscribe' ) {
-			$cart_item_data['_cm_subscription']        = 'yes';
-			$cart_item_data['_cm_subscription_period']  = isset( $_POST['cm_subscription_period'] )
-				? sanitize_text_field( $_POST['cm_subscription_period'] )
-				: 'monthly';
-			$cart_item_data['_cm_subscription_qty']     = isset( $_POST['cm_subscription_qty'] )
-				? (int) $_POST['cm_subscription_qty']
-				: 2;
-			$cart_item_data['_cm_subscription_format']  = isset( $_POST['cm_subscription_format'] )
-				? sanitize_text_field( $_POST['cm_subscription_format'] )
-				: 'single';
+			$cart_item_data['_cm_subscription'] = 'yes';
+
+			// Validate period against allowlist
+			$allowed_periods = array( '2weeks', 'monthly' );
+			$period = isset( $_POST['cm_subscription_period'] ) ? sanitize_text_field( $_POST['cm_subscription_period'] ) : 'monthly';
+			$cart_item_data['_cm_subscription_period'] = in_array( $period, $allowed_periods, true ) ? $period : 'monthly';
+
+			// Validate qty against allowlist
+			$allowed_qty = array( 2, 4 );
+			$qty = isset( $_POST['cm_subscription_qty'] ) ? (int) $_POST['cm_subscription_qty'] : 2;
+			$cart_item_data['_cm_subscription_qty'] = in_array( $qty, $allowed_qty, true ) ? $qty : 2;
+
+			// Validate format against allowlist
+			$allowed_formats = array( 'single', 'mix', 'roaster_choice' );
+			$format = isset( $_POST['cm_subscription_format'] ) ? sanitize_text_field( $_POST['cm_subscription_format'] ) : 'single';
+			$cart_item_data['_cm_subscription_format'] = in_array( $format, $allowed_formats, true ) ? $format : 'single';
 		}
 		return $cart_item_data;
 	}

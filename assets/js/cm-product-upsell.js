@@ -15,7 +15,7 @@
 
 	var tiers            = data.tiers;
 	var cartPacks        = parseInt( data.cartPacks, 10 ) || 0;
-	var subscriptionRate = parseInt( data.subscriptionRate, 10 ) || 0;
+	var subscriptionRate = parseFloat( data.subscriptionRate ) || 0;
 	var isSubscribe      = false;
 	var qtyInput         = document.querySelector( 'input[name="quantity"]' );
 	var hint             = document.querySelector( '.cm-discount-hint' );

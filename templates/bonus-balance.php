@@ -10,7 +10,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-if ( $balance <= 0 ) {
+if ( ! isset( $balance ) || $balance <= 0 ) {
 	return;
 }
 ?>

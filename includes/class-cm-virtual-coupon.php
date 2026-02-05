@@ -228,10 +228,12 @@ class CM_Virtual_Coupon {
 			update_user_meta( $user_id, 'cm_first_order_used', 1 );
 		}
 
-		// Increment promo code usage
+		// Increment promo code usage (only once per order)
 		$promo_id = $order->get_meta( 'cm_promo_id' );
-		if ( $promo_id ) {
+		if ( $promo_id && ! $order->get_meta( '_cm_promo_usage_counted' ) ) {
 			CM_Promo_Codes::increment_usage( (int) $promo_id );
+			$order->update_meta_data( '_cm_promo_usage_counted', 'yes' );
+			$order->save();
 		}
 	}
 

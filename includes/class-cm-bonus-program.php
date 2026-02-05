@@ -69,6 +69,13 @@ class CM_Bonus_Program {
 			- (float) $order->get_shipping_total()
 			- (float) $order->get_total_tax();
 
+		// Exclude the bonus amount used on this order from accrual base
+		// (customer should not earn bonus on the portion paid by bonus).
+		if ( $order->get_meta( 'cm_bonus_applied' ) === 'yes' ) {
+			$bonus_used = (float) $order->get_meta( 'cm_bonus_amount' );
+			$net -= $bonus_used;
+		}
+
 		if ( $net <= 0 ) {
 			return;
 		}

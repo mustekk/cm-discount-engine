@@ -152,15 +152,21 @@ class CM_Referral_Tracker {
 			if ( $sub_limit > 0 ) {
 				$customer_id = $order->get_customer_id();
 				if ( $customer_id > 0 ) {
-					$payment_count = $wpdb->get_var( $wpdb->prepare(
-						"SELECT COUNT(*) FROM {$table} c
-						INNER JOIN {$wpdb->prefix}wc_orders o ON c.order_id = o.id
-						WHERE c.referrer_id = %d AND o.customer_id = %d",
-						$referrer_id,
-						$customer_id
+					// Use WC API to find customer orders (works with both HPOS and legacy storage)
+					$customer_orders = wc_get_orders( array(
+						'customer_id' => $customer_id,
+						'limit'       => -1,
+						'return'      => 'ids',
+						'status'      => array( 'completed' ),
 					) );
-					if ( $payment_count >= $sub_limit ) {
-						return;
+					if ( ! empty( $customer_orders ) ) {
+						$order_ids_placeholder = implode( ',', array_map( 'absint', $customer_orders ) );
+						$payment_count = (int) $wpdb->get_var(
+							"SELECT COUNT(*) FROM {$table} WHERE referrer_id = " . absint( $referrer_id ) . " AND order_id IN ({$order_ids_placeholder})"
+						);
+						if ( $payment_count >= $sub_limit ) {
+							return;
+						}
 					}
 				}
 			}

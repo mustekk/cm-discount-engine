@@ -83,7 +83,8 @@ class CM_Admin_Referral {
 						<?php foreach ( $items as $item ) :
 							$user = get_userdata( $item->referrer_id );
 							$referrer_name = $user ? $user->display_name . ' (#' . $item->referrer_id . ')' : '#' . $item->referrer_id;
-							$order_url = admin_url( 'post.php?post=' . $item->order_id . '&action=edit' );
+							$order_obj = wc_get_order( $item->order_id );
+							$order_url = $order_obj ? $order_obj->get_edit_order_url() : '#';
 						?>
 							<tr>
 								<td><?php echo esc_html( $item->id ); ?></td>
