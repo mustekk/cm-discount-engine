@@ -17,7 +17,8 @@ class CM_Referral_Tracker {
 		// Save referral meta to order
 		add_action( 'woocommerce_checkout_create_order', array( __CLASS__, 'save_referral_meta' ), 10, 2 );
 
-		// Record commission on order completion
+		// Record commission on order paid (processing = paid, completed = delivered)
+		add_action( 'woocommerce_order_status_processing', array( __CLASS__, 'record_commission' ), 10 );
 		add_action( 'woocommerce_order_status_completed', array( __CLASS__, 'record_commission' ), 10 );
 	}
 

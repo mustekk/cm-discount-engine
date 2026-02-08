@@ -22,8 +22,12 @@ class CM_Virtual_Coupon {
 		// Save discount data to order
 		add_action( 'woocommerce_checkout_create_order', array( __CLASS__, 'save_order_meta' ), 10, 2 );
 
-		// After order completed: mark first order, increment promo usage
+		// Save subscription data to order line items
+		add_action( 'woocommerce_checkout_create_order_line_item', array( __CLASS__, 'save_subscription_item_meta' ), 10, 4 );
+
+		// After order completed: mark first order, increment promo usage, save subscription
 		add_action( 'woocommerce_order_status_completed', array( __CLASS__, 'on_order_completed' ), 10, 1 );
+		add_action( 'woocommerce_order_status_processing', array( __CLASS__, 'on_order_processing' ), 10, 1 );
 
 		// Custom coupon label in cart/checkout
 		add_filter( 'woocommerce_cart_totals_coupon_label', array( __CLASS__, 'coupon_label' ), 10, 2 );
@@ -199,15 +203,65 @@ class CM_Virtual_Coupon {
 			if ( ! empty( $discount['promo_id'] ) ) {
 				$order->update_meta_data( 'cm_promo_id', $discount['promo_id'] );
 			}
+		}
 
-			if ( $discount['type'] === 'subscription' ) {
-				$order->update_meta_data( 'cm_is_subscription', 'yes' );
+		// Check if any cart item is a subscription (regardless of which discount won).
+		// This ensures subscription is saved even when promo code beats subscription discount.
+		if ( WC()->cart ) {
+			foreach ( WC()->cart->get_cart() as $item ) {
+				if ( ! empty( $item['_cm_subscription'] ) && $item['_cm_subscription'] === 'yes' ) {
+					$order->update_meta_data( 'cm_is_subscription', 'yes' );
+					break;
+				}
 			}
 		}
 	}
 
 	/**
-	 * After order completed: mark first order used, increment promo usage.
+	 * Save subscription data to order line items.
+	 *
+	 * @param WC_Order_Item_Product $item
+	 * @param string                $cart_item_key
+	 * @param array                 $values Cart item data
+	 * @param WC_Order              $order
+	 */
+	public static function save_subscription_item_meta( $item, $cart_item_key, $values, $order ) {
+		if ( ! empty( $values['_cm_subscription'] ) && $values['_cm_subscription'] === 'yes' ) {
+			$item->update_meta_data( '_cm_subscription', 'yes' );
+
+			if ( ! empty( $values['_cm_subscription_period'] ) ) {
+				$item->update_meta_data( '_cm_subscription_period', $values['_cm_subscription_period'] );
+			}
+			if ( ! empty( $values['_cm_subscription_qty'] ) ) {
+				$item->update_meta_data( '_cm_subscription_qty', $values['_cm_subscription_qty'] );
+			}
+			if ( ! empty( $values['_cm_subscription_format'] ) ) {
+				$item->update_meta_data( '_cm_subscription_format', $values['_cm_subscription_format'] );
+			}
+		}
+	}
+
+	/**
+	 * After order processing: save subscription to user meta.
+	 */
+	public static function on_order_processing( $order_id ) {
+		$order = wc_get_order( $order_id );
+		if ( ! $order ) {
+			return;
+		}
+
+		// Save subscription data to user meta (idempotent)
+		if ( $order->get_meta( 'cm_is_subscription' ) === 'yes' ) {
+			if ( ! $order->get_meta( '_cm_subscription_saved' ) ) {
+				CM_Subscription_Manager::save_subscription_from_order( $order_id, $order );
+				$order->update_meta_data( '_cm_subscription_saved', 'yes' );
+				$order->save();
+			}
+		}
+	}
+
+	/**
+	 * After order completed: mark first order used, increment promo usage, save subscription.
 	 */
 	public static function on_order_completed( $order_id ) {
 		$order = wc_get_order( $order_id );
@@ -234,6 +288,15 @@ class CM_Virtual_Coupon {
 			CM_Promo_Codes::increment_usage( (int) $promo_id );
 			$order->update_meta_data( '_cm_promo_usage_counted', 'yes' );
 			$order->save();
+		}
+
+		// Save subscription data to user meta (also on completed, in case processing was skipped)
+		if ( $order->get_meta( 'cm_is_subscription' ) === 'yes' ) {
+			if ( ! $order->get_meta( '_cm_subscription_saved' ) ) {
+				CM_Subscription_Manager::save_subscription_from_order( $order_id, $order );
+				$order->update_meta_data( '_cm_subscription_saved', 'yes' );
+				$order->save();
+			}
 		}
 	}
 

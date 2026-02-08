@@ -1,0 +1,129 @@
+/**
+ * CM Discount Engine — Banner styles.
+ */
+
+/* ─── Base banner ─── */
+.cm-banner {
+	position: relative;
+	display: block;
+	margin: 0 0 24px;
+	border-radius: 12px;
+	overflow: hidden;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+	transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.cm-banner--hidden {
+	display: none !important;
+}
+
+/* Fade-in animation when revealed by JS */
+.cm-banner--reveal {
+	animation: cm-banner-fade-in 0.4s ease forwards;
+}
+
+@keyframes cm-banner-fade-in {
+	from {
+		opacity: 0;
+		transform: translateY(8px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+/* ─── Link wrapper ─── */
+.cm-banner__link {
+	display: block;
+	text-decoration: none !important;
+	color: inherit !important;
+}
+
+.cm-banner__link:hover .cm-banner__image {
+	transform: scale(1.02);
+}
+
+.cm-banner__link:focus {
+	outline: 2px solid #2563eb;
+	outline-offset: 2px;
+}
+
+/* ─── Picture / Image ─── */
+.cm-banner__picture {
+	display: block;
+	width: 100%;
+}
+
+.cm-banner__image {
+	display: block;
+	width: 100%;
+	height: auto;
+	transition: transform 0.3s ease;
+}
+
+/* ─── CTA Button overlay ─── */
+.cm-banner__cta {
+	position: absolute;
+	bottom: 20px;
+	left: 50%;
+	transform: translateX(-50%);
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	padding: 12px 28px;
+	background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+	color: #fff !important;
+	font-size: 15px;
+	font-weight: 700;
+	border-radius: 8px;
+	box-shadow: 0 4px 12px rgba(22, 163, 74, 0.35);
+	text-decoration: none !important;
+	transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.cm-banner__link:hover .cm-banner__cta {
+	background: linear-gradient(135deg, #15803d 0%, #166534 100%);
+	box-shadow: 0 6px 16px rgba(22, 163, 74, 0.45);
+	transform: translateX(-50%) translateY(-2px);
+}
+
+/* ─── Type-specific accent borders ─── */
+.cm-banner--first_order {
+	border: 2px solid #4ade80;
+}
+
+.cm-banner--subscription {
+	border: 2px solid #60a5fa;
+}
+
+.cm-banner--promo {
+	border: 2px solid #fbbf24;
+}
+
+.cm-banner--generic {
+	border: 1px solid #e5e7eb;
+}
+
+/* ─── Mobile adjustments ─── */
+@media (max-width: 767px) {
+	.cm-banner {
+		margin: 0 0 16px;
+		border-radius: 8px;
+	}
+
+	.cm-banner__cta {
+		bottom: 12px;
+		padding: 10px 20px;
+		font-size: 14px;
+	}
+}
+
+/* ─── Small screens ─── */
+@media (max-width: 480px) {
+	.cm-banner__cta {
+		bottom: 8px;
+		padding: 8px 16px;
+		font-size: 13px;
+	}
+}

@@ -13,7 +13,8 @@ class CM_Bonus_Program {
 	const BONUS_COUPON_CODE = 'cm-bonus-discount';
 
 	public static function init() {
-		// Accrue bonus on order completion (priority 10)
+		// Accrue bonus on order paid (processing = paid, completed = delivered)
+		add_action( 'woocommerce_order_status_processing', array( __CLASS__, 'accrue_bonus' ), 10 );
 		add_action( 'woocommerce_order_status_completed', array( __CLASS__, 'accrue_bonus' ), 10 );
 
 		// Apply bonus to cart (priority 100 — AFTER Resolver at 99)

@@ -2,7 +2,7 @@
 /**
  * Plugin Name: CM Discount Engine
  * Description: Coffee Madman — система скидок (first order, quantity tiers, promo codes, subscription, bonus, referral) + flavor attributes, reorder, catalog tiers.
- * Version: 2.0.4
+ * Version: 2.2.0
  * Author: Coffee Madman
  * Requires at least: 6.0
  * Requires PHP: 7.4
@@ -13,7 +13,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'CM_DE_VERSION', '2.0.4' );
+define( 'CM_DE_VERSION', '2.2.0' );
 define( 'CM_DE_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'CM_DE_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'CM_DE_PLUGIN_FILE', __FILE__ );
@@ -99,6 +99,10 @@ function cm_de_activate() {
 	// Create referral commissions table
 	require_once CM_DE_PLUGIN_DIR . 'includes/class-cm-referral-tracker.php';
 	CM_Referral_Tracker::create_table();
+
+	// Flush rewrite rules for subscription endpoint
+	require_once CM_DE_PLUGIN_DIR . 'includes/class-cm-subscription-manager.php';
+	CM_Subscription_Manager::flush_rules();
 }
 register_activation_hook( __FILE__, 'cm_de_activate' );
 
@@ -122,15 +126,23 @@ add_action( 'plugins_loaded', function () {
 
 	// ─── Phase 2 includes ────────────────────────────────────
 	require_once CM_DE_PLUGIN_DIR . 'includes/class-cm-subscription-floor.php';
+	require_once CM_DE_PLUGIN_DIR . 'includes/class-cm-subscription-manager.php';
 	require_once CM_DE_PLUGIN_DIR . 'includes/class-cm-bonus-program.php';
 	require_once CM_DE_PLUGIN_DIR . 'includes/class-cm-referral-tracker.php';
 	require_once CM_DE_PLUGIN_DIR . 'includes/class-cm-flavor-attributes.php';
 	require_once CM_DE_PLUGIN_DIR . 'includes/class-cm-my-account.php';
 
+	// ─── Banners ────────────────────────────────────────────────
+	require_once CM_DE_PLUGIN_DIR . 'includes/class-cm-banners.php';
+	require_once CM_DE_PLUGIN_DIR . 'includes/class-cm-banner-visibility.php';
+	require_once CM_DE_PLUGIN_DIR . 'includes/class-cm-banner-api.php';
+
 	// Admin
 	if ( is_admin() ) {
 		require_once CM_DE_PLUGIN_DIR . 'admin/class-cm-admin-promo-codes.php';
 		require_once CM_DE_PLUGIN_DIR . 'admin/class-cm-admin-referral.php';
+		require_once CM_DE_PLUGIN_DIR . 'admin/class-cm-admin-subscriptions.php';
+		require_once CM_DE_PLUGIN_DIR . 'admin/class-cm-admin-banners.php';
 	}
 
 	// ─── Initialize ──────────────────────────────────────────
@@ -138,14 +150,19 @@ add_action( 'plugins_loaded', function () {
 	CM_Virtual_Coupon::init();
 	CM_Upsell_Engine::init();
 	CM_Subscription_Floor::init();
+	CM_Subscription_Manager::init();
 	CM_Bonus_Program::init();
 	CM_Referral_Tracker::init();
 	CM_Flavor_Attributes::init();
 	CM_My_Account::init();
+	CM_Banners::init();
+	CM_Banner_API::init();
 
 	if ( is_admin() ) {
 		CM_Admin_Promo_Codes::init();
 		CM_Admin_Referral::init();
+		CM_Admin_Subscriptions::init();
+		CM_Admin_Banners::init();
 	}
 
 	// Admin settings — load via WC filter so WC_Settings_Page is available
@@ -211,6 +228,27 @@ add_action( 'plugins_loaded', function () {
 				CM_DE_VERSION
 			);
 		}
+
+		// Banner CSS & JS (always load — shortcode can be on any page)
+		wp_enqueue_style(
+			'cm-banners',
+			CM_DE_PLUGIN_URL . 'assets/css/cm-banners.css',
+			array(),
+			CM_DE_VERSION
+		);
+
+		wp_enqueue_script(
+			'cm-banners',
+			CM_DE_PLUGIN_URL . 'assets/js/cm-banners.js',
+			array(),
+			CM_DE_VERSION,
+			true
+		);
+
+		wp_localize_script( 'cm-banners', 'cmBannersData', array(
+			'restUrl' => esc_url_raw( rest_url() ),
+			'nonce'   => wp_create_nonce( 'wp_rest' ),
+		) );
 
 		// Product page: dynamic upsell JS
 		if ( is_product() && 'yes' === get_option( 'cm_quantity_enabled', 'yes' ) ) {
