@@ -154,6 +154,23 @@
 	padding: 2px 0 !important;
 }
 
+/* ─── Delivery time (next to shipping method name) ─── */
+.cm-delivery-time {
+	display: block;
+	color: #6b7280;
+	font-size: 12px;
+	font-style: italic;
+	margin-top: 2px;
+}
+
+/* ─── Weight shipping hint ─── */
+.cm-weight-hint {
+	color: #166534 !important;
+	background: #f0fdf4 !important;
+	border: 1px solid #bbf7d0 !important;
+	border-radius: 4px;
+}
+
 /* ─── Product page: dynamic upsell message ─── */
 .cm-discount-hint__upsell {
 	margin-top: 12px !important;

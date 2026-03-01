@@ -191,7 +191,7 @@ class CM_Upsell_Engine {
 	}
 
 	/**
-	 * Show shipping threshold hint.
+	 * Show shipping threshold hint (free shipping + weight-based).
 	 */
 	public static function shipping_hint() {
 		if ( ! WC()->cart ) {
@@ -203,6 +203,14 @@ class CM_Upsell_Engine {
 		if ( $hint ) {
 			echo '<tr class="cm-shipping-hint"><td colspan="2"><div class="cm-upsell-message cm-shipping-upsell">';
 			echo wp_kses_post( $hint );
+			echo '</div></td></tr>';
+		}
+
+		$weight_hint = self::get_weight_shipping_hint( WC()->cart );
+
+		if ( $weight_hint ) {
+			echo '<tr class="cm-shipping-hint"><td colspan="2"><div class="cm-upsell-message cm-shipping-upsell cm-weight-hint">';
+			echo wp_kses_post( $weight_hint );
 			echo '</div></td></tr>';
 		}
 	}
@@ -232,6 +240,56 @@ class CM_Upsell_Engine {
 			'Add €%s more for free shipping!',
 			number_format( $remaining, 2 )
 		);
+	}
+
+	/**
+	 * Get weight-based shipping hint for Europe/UK zones.
+	 *
+	 * @param WC_Cart $cart
+	 * @return string|null
+	 */
+	private static function get_weight_shipping_hint( $cart ) {
+		$packages = WC()->shipping()->get_packages();
+		if ( empty( $packages ) ) {
+			return null;
+		}
+
+		// Find our weight-based shipping rate in the first package.
+		$package = reset( $packages );
+		if ( empty( $package['rates'] ) ) {
+			return null;
+		}
+
+		$weight_rate = null;
+		foreach ( $package['rates'] as $rate ) {
+			if ( 'cm_weight_shipping' === $rate->method_id ) {
+				$weight_rate = $rate;
+				break;
+			}
+		}
+
+		if ( ! $weight_rate ) {
+			return null;
+		}
+
+		$meta      = $weight_rate->get_meta_data();
+		$weight    = isset( $meta['package_weight'] ) ? (float) $meta['package_weight'] : 0;
+		$threshold = isset( $meta['weight_threshold'] ) ? (float) $meta['weight_threshold'] : 1;
+		$cost_light = isset( $meta['cost_light'] ) ? (float) $meta['cost_light'] : 17.50;
+
+		if ( $weight <= 0 ) {
+			return null;
+		}
+
+		if ( $weight <= $threshold ) {
+			return sprintf(
+				'Your order ships for €%s. Add more coffee — shipping stays the same up to %s kg!',
+				number_format( $cost_light, 2 ),
+				number_format( $threshold, 1 )
+			);
+		}
+
+		return null;
 	}
 
 	/**
