@@ -834,3 +834,160 @@
 	color: #6b7280;
 	margin-top: 16px !important;
 }
+
+/* ─── Responsive: Tablet (≤768px) ─── */
+@media (max-width: 768px) {
+	/* Compact flavor bars — ensure minimum readable size */
+	.cm-flavor--compact .cm-flavor__label {
+		font-size: 11px;
+	}
+
+	/* Discount hint tiers — allow wrapping */
+	.cm-discount-hint__tiers {
+		flex-wrap: wrap;
+	}
+
+	.cm-discount-hint__tier {
+		min-width: 80px;
+	}
+
+	/* Subscription toggle — tighter padding */
+	.cm-subscription-toggle {
+		padding: 14px 14px !important;
+	}
+
+	.cm-subscription-toggle__option {
+		padding: 8px 12px !important;
+	}
+
+	/* My Account subscription card */
+	.cm-subscription-card {
+		padding: 18px !important;
+	}
+
+	.cm-subscription-card__actions {
+		flex-direction: column;
+	}
+
+	.cm-subscription-btn {
+		width: 100%;
+		justify-content: center;
+	}
+}
+
+/* ─── Responsive: Mobile (≤480px) ─── */
+@media (max-width: 480px) {
+	/* Compact flavor bars — larger for readability */
+	.cm-flavor--compact .cm-flavor__label {
+		flex: 0 0 68px;
+		font-size: 11px;
+	}
+
+	.cm-flavor--compact .cm-flavor__bar {
+		height: 6px;
+	}
+
+	.cm-flavor--compact .cm-flavor__row {
+		gap: 6px !important;
+		margin-bottom: 4px !important;
+	}
+
+	/* Full flavor bars — slightly tighter */
+	.cm-flavor__label {
+		flex: 0 0 72px;
+		font-size: 11px;
+	}
+
+	.cm-flavor__bar {
+		height: 7px;
+	}
+
+	.cm-flavor__value {
+		font-size: 11px;
+	}
+
+	/* Discount hint — stack tiers vertically on very small screens */
+	.cm-discount-hint {
+		padding: 16px 14px 18px !important;
+	}
+
+	.cm-discount-hint__tiers {
+		gap: 6px !important;
+	}
+
+	.cm-discount-hint__tier {
+		padding: 10px 6px !important;
+	}
+
+	.cm-discount-hint__tier-packs {
+		font-size: 15px;
+	}
+
+	.cm-discount-hint__tier-rate {
+		font-size: 16px;
+	}
+
+	/* Subscription toggle — mobile-friendly */
+	.cm-subscription-toggle {
+		margin: 12px 0 8px !important;
+		padding: 12px !important;
+	}
+
+	.cm-subscription-toggle__header {
+		gap: 6px !important;
+		margin-bottom: 10px !important;
+	}
+
+	.cm-subscription-toggle__badge {
+		font-size: 11px;
+		padding: 2px 6px !important;
+	}
+
+	.cm-subscription-toggle__title {
+		font-size: 13px;
+	}
+
+	.cm-subscription-toggle__option {
+		padding: 8px 10px !important;
+		gap: 6px !important;
+	}
+
+	.cm-subscription-toggle__label {
+		font-size: 13px;
+	}
+
+	/* Cart upsell — compact on mobile */
+	.cm-upsell-message {
+		padding: 10px 12px;
+		font-size: 13px;
+		gap: 6px;
+	}
+
+	.cm-cart-notice {
+		padding: 10px 12px;
+		font-size: 13px;
+	}
+
+	/* My Account bonus card */
+	.cm-bonus-balance {
+		padding: 16px !important;
+		max-width: 100%;
+	}
+
+	.cm-bonus-balance__amount {
+		font-size: 24px;
+	}
+
+	/* Subscription empty state */
+	.cm-subscription-empty {
+		padding: 30px 16px !important;
+	}
+
+	.cm-subscription-empty__icon {
+		font-size: 40px;
+	}
+
+	.cm-subscription-empty__title {
+		font-size: 20px;
+	}
+}

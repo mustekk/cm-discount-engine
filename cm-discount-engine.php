@@ -2,7 +2,7 @@
 /**
  * Plugin Name: CM Discount Engine
  * Description: Coffee Madman — система скидок (first order, quantity tiers, promo codes, subscription, bonus, referral) + flavor attributes, reorder, catalog tiers.
- * Version: 2.2.1
+ * Version: 2.2.4
  * Author: Coffee Madman
  * Requires at least: 6.0
  * Requires PHP: 7.4
@@ -13,7 +13,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'CM_DE_VERSION', '2.2.1' );
+define( 'CM_DE_VERSION', '2.2.4' );
 define( 'CM_DE_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'CM_DE_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'CM_DE_PLUGIN_FILE', __FILE__ );
@@ -219,15 +219,14 @@ add_action( 'plugins_loaded', function () {
 
 	// ─── Enqueue frontend CSS & JS ──────────────────────────────
 	add_action( 'wp_enqueue_scripts', function () {
-		// CSS on product, cart, checkout, shop/category, and account pages
-		if ( is_product() || is_cart() || is_checkout() || is_shop() || is_product_category() || is_account_page() ) {
-			wp_enqueue_style(
-				'cm-discount-frontend',
-				CM_DE_PLUGIN_URL . 'assets/css/cm-discount-frontend.css',
-				array(),
-				CM_DE_VERSION
-			);
-		}
+		// CSS: always load — flavor bars, subscription toggle, etc. can appear on any page
+		// (Elementor product grids, shortcodes, homepage widgets)
+		wp_enqueue_style(
+			'cm-discount-frontend',
+			CM_DE_PLUGIN_URL . 'assets/css/cm-discount-frontend.css',
+			array(),
+			CM_DE_VERSION
+		);
 
 		// Banner CSS & JS (always load — shortcode can be on any page)
 		wp_enqueue_style(

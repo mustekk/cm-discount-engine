@@ -40,6 +40,9 @@ class CM_Virtual_Coupon {
 
 		// Output CSS to hide dummy coupon rows
 		add_action( 'wp_footer', array( __CLASS__, 'hide_dummy_coupon_css' ) );
+
+		// Clear promo code session data when user removes the auto-discount coupon
+		add_action( 'woocommerce_removed_coupon', array( __CLASS__, 'on_coupon_removed' ) );
 	}
 
 	/**
@@ -369,5 +372,30 @@ class CM_Virtual_Coupon {
 		}
 
 		return $valid;
+	}
+
+	/**
+	 * When user removes the auto-discount coupon, also clear the promo code
+	 * from the session and remove the dummy promo coupon from the cart.
+	 */
+	public static function on_coupon_removed( $coupon_code ) {
+		if ( strtolower( $coupon_code ) !== self::COUPON_CODE ) {
+			return;
+		}
+
+		if ( ! WC()->session || ! WC()->cart ) {
+			return;
+		}
+
+		// Clear promo code from session
+		$promo_code = WC()->session->get( 'cm_promo_code_input', '' );
+		WC()->session->set( 'cm_promo_code_input', '' );
+		WC()->session->set( 'cm_coupon_data', null );
+		WC()->session->set( 'cm_active_discount', null );
+
+		// Remove the dummy promo coupon from the cart (e.g. "welcome15")
+		if ( $promo_code ) {
+			WC()->cart->remove_coupon( $promo_code );
+		}
 	}
 }
