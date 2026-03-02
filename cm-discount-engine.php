@@ -2,7 +2,7 @@
 /**
  * Plugin Name: CM Discount Engine
  * Description: Coffee Madman — система скидок (first order, quantity tiers, promo codes, subscription, bonus, referral) + flavor attributes, reorder, catalog tiers.
- * Version: 2.2.4
+ * Version: 2.3.0
  * Author: Coffee Madman
  * Requires at least: 6.0
  * Requires PHP: 7.4
@@ -13,7 +13,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'CM_DE_VERSION', '2.2.4' );
+define( 'CM_DE_VERSION', '2.3.0' );
 define( 'CM_DE_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'CM_DE_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'CM_DE_PLUGIN_FILE', __FILE__ );
@@ -132,6 +132,10 @@ add_action( 'plugins_loaded', function () {
 	require_once CM_DE_PLUGIN_DIR . 'includes/class-cm-flavor-attributes.php';
 	require_once CM_DE_PLUGIN_DIR . 'includes/class-cm-my-account.php';
 
+	// ─── Shipping (Europe/UK) ────────────────────────────────────
+	require_once CM_DE_PLUGIN_DIR . 'includes/class-cm-shipping-weight-rate.php';
+	require_once CM_DE_PLUGIN_DIR . 'includes/class-cm-shipping-express.php';
+
 	// ─── Banners ────────────────────────────────────────────────
 	require_once CM_DE_PLUGIN_DIR . 'includes/class-cm-banners.php';
 	require_once CM_DE_PLUGIN_DIR . 'includes/class-cm-banner-visibility.php';
@@ -189,6 +193,24 @@ add_action( 'plugins_loaded', function () {
 			}
 		}
 		return $rates;
+	} );
+
+	// ─── Register custom shipping methods (Europe/UK) ──────────
+	add_filter( 'woocommerce_shipping_methods', function ( $methods ) {
+		$methods['cm_weight_shipping']  = 'CM_Shipping_Weight_Rate';
+		$methods['cm_express_shipping'] = 'CM_Shipping_Express';
+		return $methods;
+	} );
+
+	// ─── Delivery time label next to shipping rate ──────────────
+	add_action( 'woocommerce_after_shipping_rate', function ( $method ) {
+		$custom_ids = array( 'cm_weight_shipping', 'cm_express_shipping' );
+		if ( in_array( $method->method_id, $custom_ids, true ) ) {
+			$meta = $method->get_meta_data();
+			if ( ! empty( $meta['delivery_time'] ) ) {
+				echo '<br><small class="cm-delivery-time">' . esc_html( $meta['delivery_time'] ) . '</small>';
+			}
+		}
 	} );
 
 	// ─── Catalog tiers: add CSS classes based on price ──────────
