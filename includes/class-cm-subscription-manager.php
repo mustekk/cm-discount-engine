@@ -170,6 +170,23 @@ class CM_Subscription_Manager {
 				self::update_subscription( $user_id, $period, $qty, $format );
 				wc_add_notice( __( 'Your subscription settings have been updated.', 'cm-discount-engine' ), 'success' );
 				break;
+
+			case 'enable_auto_renewal':
+				if ( 'yes' === get_option( 'cm_auto_renewal_enabled', 'no' ) ) {
+					$token_id = (int) get_user_meta( $user_id, 'cm_subscription_payment_token_id', true );
+					if ( $token_id ) {
+						update_user_meta( $user_id, 'cm_subscription_auto_renewal', 'yes' );
+						wc_add_notice( __( 'Auto-renewal has been enabled.', 'cm-discount-engine' ), 'success' );
+					} else {
+						wc_add_notice( __( 'Please add a payment method first.', 'cm-discount-engine' ), 'error' );
+					}
+				}
+				break;
+
+			case 'disable_auto_renewal':
+				update_user_meta( $user_id, 'cm_subscription_auto_renewal', 'no' );
+				wc_add_notice( __( 'Auto-renewal has been disabled. You can still reorder manually.', 'cm-discount-engine' ), 'success' );
+				break;
 		}
 
 		wp_safe_redirect( wc_get_account_endpoint_url( 'subscription' ) );
@@ -184,14 +201,18 @@ class CM_Subscription_Manager {
 	 */
 	public static function get_subscription( $user_id ) {
 		return array(
-			'active'     => get_user_meta( $user_id, 'cm_subscription_active', true ) === 'yes',
-			'status'     => get_user_meta( $user_id, 'cm_subscription_status', true ) ?: 'none',
-			'period'     => get_user_meta( $user_id, 'cm_subscription_period', true ) ?: 'monthly',
-			'qty'        => (int) get_user_meta( $user_id, 'cm_subscription_qty', true ) ?: 2,
-			'format'     => get_user_meta( $user_id, 'cm_subscription_format', true ) ?: 'single',
-			'last_order' => (int) get_user_meta( $user_id, 'cm_subscription_last_order', true ),
-			'started'    => get_user_meta( $user_id, 'cm_subscription_started', true ),
-			'next_date'  => get_user_meta( $user_id, 'cm_subscription_next_date', true ),
+			'active'           => get_user_meta( $user_id, 'cm_subscription_active', true ) === 'yes',
+			'status'           => get_user_meta( $user_id, 'cm_subscription_status', true ) ?: 'none',
+			'period'           => get_user_meta( $user_id, 'cm_subscription_period', true ) ?: 'monthly',
+			'qty'              => (int) get_user_meta( $user_id, 'cm_subscription_qty', true ) ?: 2,
+			'format'           => get_user_meta( $user_id, 'cm_subscription_format', true ) ?: 'single',
+			'last_order'       => (int) get_user_meta( $user_id, 'cm_subscription_last_order', true ),
+			'started'          => get_user_meta( $user_id, 'cm_subscription_started', true ),
+			'next_date'        => get_user_meta( $user_id, 'cm_subscription_next_date', true ),
+			'auto_renewal'     => get_user_meta( $user_id, 'cm_subscription_auto_renewal', true ) ?: 'no',
+			'renewal_failures' => (int) get_user_meta( $user_id, 'cm_subscription_renewal_failures', true ),
+			'last_renewal'     => get_user_meta( $user_id, 'cm_subscription_last_renewal', true ),
+			'pause_reason'     => get_user_meta( $user_id, 'cm_subscription_pause_reason', true ),
 		);
 	}
 
@@ -274,6 +295,11 @@ class CM_Subscription_Manager {
 		}
 
 		update_user_meta( $user_id, 'cm_subscription_status', 'paused' );
+
+		// Clear renewal failure data on manual pause.
+		delete_user_meta( $user_id, 'cm_subscription_renewal_failures' );
+		delete_user_meta( $user_id, 'cm_subscription_last_failure' );
+
 		return true;
 	}
 
@@ -300,6 +326,11 @@ class CM_Subscription_Manager {
 		$next_date = self::calculate_next_date( $period );
 		update_user_meta( $user_id, 'cm_subscription_next_date', $next_date );
 
+		// Clear pause reason and failure data on resume.
+		delete_user_meta( $user_id, 'cm_subscription_pause_reason' );
+		delete_user_meta( $user_id, 'cm_subscription_renewal_failures' );
+		delete_user_meta( $user_id, 'cm_subscription_last_failure' );
+
 		return true;
 	}
 
@@ -311,6 +342,12 @@ class CM_Subscription_Manager {
 	public static function cancel_subscription( $user_id ) {
 		update_user_meta( $user_id, 'cm_subscription_status', 'cancelled' );
 		delete_user_meta( $user_id, 'cm_subscription_active' );
+
+		// Clear auto-renewal data.
+		update_user_meta( $user_id, 'cm_subscription_auto_renewal', 'no' );
+		delete_user_meta( $user_id, 'cm_subscription_renewal_failures' );
+		delete_user_meta( $user_id, 'cm_subscription_last_failure' );
+		delete_user_meta( $user_id, 'cm_subscription_pause_reason' );
 	}
 
 	/**

@@ -28,6 +28,7 @@ class CM_Admin_Settings extends WC_Settings_Page {
 			'quantity'     => __( 'Quantity Tiers', 'cm-discount-engine' ),
 			'categories'   => __( 'Category Eligibility', 'cm-discount-engine' ),
 			'subscription' => __( 'Subscription (Coffee Club)', 'cm-discount-engine' ),
+			'auto_renewal' => __( 'Auto-Renewal', 'cm-discount-engine' ),
 			'bonus'        => __( 'Bonus Program', 'cm-discount-engine' ),
 			'referral'     => __( 'Referral Program', 'cm-discount-engine' ),
 			'catalog'      => __( 'Catalog Tiers', 'cm-discount-engine' ),
@@ -45,6 +46,8 @@ class CM_Admin_Settings extends WC_Settings_Page {
 				return $this->get_category_settings();
 			case 'subscription':
 				return $this->get_subscription_settings();
+			case 'auto_renewal':
+				return $this->get_auto_renewal_settings();
 			case 'bonus':
 				return $this->get_bonus_settings();
 			case 'referral':
@@ -196,6 +199,71 @@ class CM_Admin_Settings extends WC_Settings_Page {
 			array(
 				'type' => 'sectionend',
 				'id'   => 'cm_subscription_options',
+			),
+		);
+	}
+
+	/**
+	 * Auto-renewal settings.
+	 */
+	private function get_auto_renewal_settings() {
+		$next = wp_next_scheduled( CM_Auto_Renewal::CRON_HOOK );
+		$cron_desc = $next
+			? sprintf( __( 'Next scheduled run: %s', 'cm-discount-engine' ), date_i18n( 'Y-m-d H:i:s', $next ) )
+			: __( 'Cron not scheduled. Save settings to activate.', 'cm-discount-engine' );
+
+		return array(
+			array(
+				'title' => __( 'Auto-Renewal (Automatic Subscription Orders)', 'cm-discount-engine' ),
+				'type'  => 'title',
+				'desc'  => __( 'When enabled, subscription orders are created and charged automatically using saved Revolut cards.', 'cm-discount-engine' )
+					. '<br><em>' . $cron_desc . '</em>',
+				'id'    => 'cm_auto_renewal_options',
+			),
+			array(
+				'title'   => __( 'Enable Auto-Renewal', 'cm-discount-engine' ),
+				'desc'    => __( 'Automatically create and charge subscription orders when due', 'cm-discount-engine' ),
+				'id'      => 'cm_auto_renewal_enabled',
+				'default' => 'no',
+				'type'    => 'checkbox',
+			),
+			array(
+				'title'             => __( 'Max Retry Attempts', 'cm-discount-engine' ),
+				'desc'              => __( 'Number of retry attempts after a failed payment before pausing the subscription.', 'cm-discount-engine' ),
+				'id'                => 'cm_auto_renewal_max_retries',
+				'default'           => '3',
+				'type'              => 'number',
+				'custom_attributes' => array(
+					'min'  => '1',
+					'max'  => '10',
+					'step' => '1',
+				),
+				'css'               => 'width: 80px;',
+			),
+			array(
+				'title'   => __( 'Retry Schedule (days)', 'cm-discount-engine' ),
+				'desc'    => __( 'Comma-separated days between retry attempts (e.g., "1,3,7" = retry after 1 day, then 3, then 7).', 'cm-discount-engine' ),
+				'id'      => 'cm_auto_renewal_retry_days',
+				'default' => '1,3,7',
+				'type'    => 'text',
+				'css'     => 'width: 150px;',
+			),
+			array(
+				'title'             => __( 'Reminder Days Before Renewal', 'cm-discount-engine' ),
+				'desc'              => __( 'Send reminder email this many days before auto-renewal. 0 = no reminder.', 'cm-discount-engine' ),
+				'id'                => 'cm_auto_renewal_reminder_days',
+				'default'           => '3',
+				'type'              => 'number',
+				'custom_attributes' => array(
+					'min'  => '0',
+					'max'  => '14',
+					'step' => '1',
+				),
+				'css'               => 'width: 80px;',
+			),
+			array(
+				'type' => 'sectionend',
+				'id'   => 'cm_auto_renewal_options',
 			),
 		);
 	}

@@ -82,9 +82,11 @@ class CM_Admin_Subscriptions {
 					<tr>
 						<th scope="col"><?php esc_html_e( 'Customer', 'cm-discount-engine' ); ?></th>
 						<th scope="col"><?php esc_html_e( 'Status', 'cm-discount-engine' ); ?></th>
+						<th scope="col"><?php esc_html_e( 'Auto-Renewal', 'cm-discount-engine' ); ?></th>
 						<th scope="col"><?php esc_html_e( 'Period', 'cm-discount-engine' ); ?></th>
 						<th scope="col"><?php esc_html_e( 'Quantity', 'cm-discount-engine' ); ?></th>
 						<th scope="col"><?php esc_html_e( 'Format', 'cm-discount-engine' ); ?></th>
+						<th scope="col"><?php esc_html_e( 'Payment', 'cm-discount-engine' ); ?></th>
 						<th scope="col"><?php esc_html_e( 'Last Order', 'cm-discount-engine' ); ?></th>
 						<th scope="col"><?php esc_html_e( 'Next Date', 'cm-discount-engine' ); ?></th>
 						<th scope="col"><?php esc_html_e( 'Member Since', 'cm-discount-engine' ); ?></th>
@@ -93,7 +95,7 @@ class CM_Admin_Subscriptions {
 				<tbody>
 					<?php if ( empty( $subscribers ) ) : ?>
 						<tr>
-							<td colspan="8"><?php esc_html_e( 'No subscribers found.', 'cm-discount-engine' ); ?></td>
+							<td colspan="10"><?php esc_html_e( 'No subscribers found.', 'cm-discount-engine' ); ?></td>
 						</tr>
 					<?php else : ?>
 						<?php foreach ( $subscribers as $data ) :
@@ -115,6 +117,21 @@ class CM_Admin_Subscriptions {
 									<span class="cm-status cm-status--<?php echo esc_attr( $sub['status'] ); ?>">
 										<?php echo esc_html( CM_Subscription_Manager::get_status_label( $sub['status'] ) ); ?>
 									</span>
+									<?php if ( ! empty( $sub['pause_reason'] ) && $sub['pause_reason'] === 'payment_failed' ) : ?>
+										<br><small style="color:#dc3545;"><?php esc_html_e( '(payment failed)', 'cm-discount-engine' ); ?></small>
+									<?php endif; ?>
+								</td>
+								<td>
+									<?php if ( $sub['auto_renewal'] === 'yes' ) : ?>
+										<span class="cm-status cm-status--active"><?php esc_html_e( 'ON', 'cm-discount-engine' ); ?></span>
+										<?php if ( $sub['renewal_failures'] > 0 ) : ?>
+											<br><small style="color:#dc3545;">
+												<?php printf( esc_html__( '%d failures', 'cm-discount-engine' ), $sub['renewal_failures'] ); ?>
+											</small>
+										<?php endif; ?>
+									<?php else : ?>
+										<span class="cm-status cm-status--none"><?php esc_html_e( 'OFF', 'cm-discount-engine' ); ?></span>
+									<?php endif; ?>
 								</td>
 								<td><?php echo esc_html( CM_Subscription_Manager::get_period_label( $sub['period'] ) ); ?></td>
 								<td>
@@ -126,6 +143,19 @@ class CM_Admin_Subscriptions {
 									?>
 								</td>
 								<td><?php echo esc_html( CM_Subscription_Manager::get_format_label( $sub['format'] ) ); ?></td>
+								<td>
+									<?php
+									$pm = CM_Auto_Renewal::get_payment_method_info( $user->ID );
+									if ( $pm ) :
+									?>
+										<span title="<?php echo esc_attr( $pm['brand'] ); ?>">
+											****<?php echo esc_html( $pm['last4'] ); ?>
+										</span>
+										<br><small><?php echo esc_html( $pm['expiry'] ); ?></small>
+									<?php else : ?>
+										&mdash;
+									<?php endif; ?>
+								</td>
 								<td>
 									<?php if ( $order ) : ?>
 										<a href="<?php echo esc_url( $order->get_edit_order_url() ); ?>">

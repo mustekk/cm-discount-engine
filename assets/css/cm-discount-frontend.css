@@ -852,6 +852,78 @@
 	margin-top: 16px !important;
 }
 
+/* ─── Auto-Renewal section in My Account ─── */
+.cm-subscription-card__auto-renewal {
+	background: rgba(255, 255, 255, 0.6);
+	border-radius: 8px;
+	padding: 16px !important;
+	margin-top: 16px !important;
+	border: 1px solid rgba(191, 219, 254, 0.5);
+}
+
+.cm-subscription-card__auto-renewal-header {
+	display: flex;
+	align-items: center;
+	gap: 10px !important;
+	margin-bottom: 8px !important;
+}
+
+.cm-auto-renewal-badge {
+	display: inline-block;
+	padding: 2px 10px;
+	border-radius: 10px;
+	font-size: 12px;
+	font-weight: 600;
+	letter-spacing: 0.5px;
+}
+
+.cm-auto-renewal-badge--on {
+	background: #d4edda;
+	color: #155724;
+}
+
+.cm-auto-renewal-badge--off {
+	background: #e2e3e5;
+	color: #383d41;
+}
+
+.cm-subscription-card__payment-method {
+	display: flex;
+	align-items: center;
+	gap: 8px !important;
+	margin-bottom: 12px !important;
+	font-size: 14px;
+}
+
+.cm-subscription-card__payment-method small {
+	color: #6b7280;
+}
+
+.cm-subscription-card__auto-renewal-actions {
+	margin-top: 8px !important;
+}
+
+.cm-subscription-card__hint {
+	font-size: 13px;
+	color: #6b7280;
+	margin: 0 !important;
+}
+
+.cm-subscription-card__hint a {
+	color: #2563eb;
+}
+
+.cm-subscription-btn--small {
+	padding: 6px 14px !important;
+	font-size: 13px !important;
+}
+
+.cm-subscription-card__status-reason {
+	font-size: 13px;
+	color: #dc3545;
+	font-style: italic;
+}
+
 /* ─── Responsive: Tablet (≤768px) ─── */
 @media (max-width: 768px) {
 	/* Compact flavor bars — ensure minimum readable size */

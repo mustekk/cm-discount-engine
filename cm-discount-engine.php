@@ -2,7 +2,7 @@
 /**
  * Plugin Name: CM Discount Engine
  * Description: Coffee Madman — система скидок (first order, quantity tiers, promo codes, subscription, bonus, referral) + flavor attributes, reorder, catalog tiers.
- * Version: 2.3.0
+ * Version: 2.3.2
  * Author: Coffee Madman
  * Requires at least: 6.0
  * Requires PHP: 7.4
@@ -13,7 +13,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'CM_DE_VERSION', '2.3.0' );
+define( 'CM_DE_VERSION', '2.4.0' );
 define( 'CM_DE_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'CM_DE_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'CM_DE_PLUGIN_FILE', __FILE__ );
@@ -96,6 +96,20 @@ function cm_de_activate() {
 		add_option( 'cm_core_max_price', 18 );
 	}
 
+	// Phase 2 defaults — Auto-Renewal
+	if ( false === get_option( 'cm_auto_renewal_enabled' ) ) {
+		add_option( 'cm_auto_renewal_enabled', 'no' );
+	}
+	if ( false === get_option( 'cm_auto_renewal_max_retries' ) ) {
+		add_option( 'cm_auto_renewal_max_retries', 3 );
+	}
+	if ( false === get_option( 'cm_auto_renewal_retry_days' ) ) {
+		add_option( 'cm_auto_renewal_retry_days', '1,3,7' );
+	}
+	if ( false === get_option( 'cm_auto_renewal_reminder_days' ) ) {
+		add_option( 'cm_auto_renewal_reminder_days', 3 );
+	}
+
 	// Create referral commissions table
 	require_once CM_DE_PLUGIN_DIR . 'includes/class-cm-referral-tracker.php';
 	CM_Referral_Tracker::create_table();
@@ -136,6 +150,9 @@ add_action( 'plugins_loaded', function () {
 	require_once CM_DE_PLUGIN_DIR . 'includes/class-cm-shipping-weight-rate.php';
 	require_once CM_DE_PLUGIN_DIR . 'includes/class-cm-shipping-express.php';
 
+	// ─── Auto-Renewal ───────────────────────────────────────────
+	require_once CM_DE_PLUGIN_DIR . 'includes/class-cm-auto-renewal.php';
+
 	// ─── Banners ────────────────────────────────────────────────
 	require_once CM_DE_PLUGIN_DIR . 'includes/class-cm-banners.php';
 	require_once CM_DE_PLUGIN_DIR . 'includes/class-cm-banner-visibility.php';
@@ -159,6 +176,7 @@ add_action( 'plugins_loaded', function () {
 	CM_Referral_Tracker::init();
 	CM_Flavor_Attributes::init();
 	CM_My_Account::init();
+	CM_Auto_Renewal::init();
 	CM_Banners::init();
 	CM_Banner_API::init();
 

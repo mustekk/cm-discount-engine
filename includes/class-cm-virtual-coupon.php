@@ -43,6 +43,9 @@ class CM_Virtual_Coupon {
 
 		// Clear promo code session data when user removes the auto-discount coupon
 		add_action( 'woocommerce_removed_coupon', array( __CLASS__, 'on_coupon_removed' ) );
+
+		// Auto-apply promo/referral code from URL (?coupon=CODE)
+		add_action( 'wp_loaded', array( __CLASS__, 'apply_coupon_from_url' ), 20 );
 	}
 
 	/**
@@ -396,6 +399,38 @@ class CM_Virtual_Coupon {
 		// Remove the dummy promo coupon from the cart (e.g. "welcome15")
 		if ( $promo_code ) {
 			WC()->cart->remove_coupon( $promo_code );
+		}
+	}
+
+	/**
+	 * Auto-apply promo/referral code from URL query parameter.
+	 *
+	 * Supports: ?coupon=CODE on any page.
+	 * When a valid CM promo code is detected in the URL, it is stored in the
+	 * session so the Resolver picks it up when the cart is calculated.
+	 */
+	public static function apply_coupon_from_url() {
+		if ( empty( $_GET['coupon'] ) ) {
+			return;
+		}
+
+		if ( is_admin() || ! function_exists( 'WC' ) || ! WC()->session ) {
+			return;
+		}
+
+		$code = strtolower( sanitize_text_field( wp_unslash( $_GET['coupon'] ) ) );
+
+		$promo = CM_Promo_Codes::validate_code( $code );
+		if ( ! $promo ) {
+			return;
+		}
+
+		// Store in session for the Resolver
+		WC()->session->set( 'cm_promo_code_input', $code );
+
+		// Apply the dummy coupon so WC knows about it
+		if ( WC()->cart && ! WC()->cart->has_discount( $code ) ) {
+			WC()->cart->apply_coupon( $code );
 		}
 	}
 }

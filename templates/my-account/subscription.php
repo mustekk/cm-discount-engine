@@ -9,11 +9,15 @@
 
 defined( 'ABSPATH' ) || exit;
 
-$rate       = (int) get_option( 'cm_subscription_rate', 20 );
-$has_sub    = $subscription['active'] || in_array( $subscription['status'], array( 'active', 'paused' ), true );
-$is_active  = $subscription['status'] === 'active';
-$is_paused  = $subscription['status'] === 'paused';
-$reorder_url = CM_Subscription_Manager::get_reorder_url( get_current_user_id() );
+$rate             = (int) get_option( 'cm_subscription_rate', 20 );
+$has_sub          = $subscription['active'] || in_array( $subscription['status'], array( 'active', 'paused' ), true );
+$is_active        = $subscription['status'] === 'active';
+$is_paused        = $subscription['status'] === 'paused';
+$reorder_url      = CM_Subscription_Manager::get_reorder_url( get_current_user_id() );
+$auto_renewal_on  = 'yes' === get_option( 'cm_auto_renewal_enabled', 'no' );
+$user_auto_renewal = $subscription['auto_renewal'] === 'yes';
+$payment_info     = CM_Auto_Renewal::get_payment_method_info( get_current_user_id() );
+$pause_reason     = $subscription['pause_reason'] ?? '';
 ?>
 
 <div class="cm-subscription-page">
@@ -29,6 +33,11 @@ $reorder_url = CM_Subscription_Manager::get_reorder_url( get_current_user_id() )
 				<span class="cm-subscription-card__status-text">
 					<?php echo esc_html( CM_Subscription_Manager::get_status_label( $subscription['status'] ) ); ?>
 				</span>
+				<?php if ( $is_paused && $pause_reason === 'payment_failed' ) : ?>
+					<span class="cm-subscription-card__status-reason">
+						&mdash; <?php esc_html_e( 'paused due to payment failure', 'cm-discount-engine' ); ?>
+					</span>
+				<?php endif; ?>
 			</div>
 
 			<div class="cm-subscription-card__details">
@@ -53,7 +62,12 @@ $reorder_url = CM_Subscription_Manager::get_reorder_url( get_current_user_id() )
 				</div>
 				<?php if ( $subscription['next_date'] && $is_active ) : ?>
 					<div class="cm-subscription-card__row">
-						<span class="cm-subscription-card__label"><?php esc_html_e( 'Next reminder:', 'cm-discount-engine' ); ?></span>
+						<span class="cm-subscription-card__label">
+							<?php echo $user_auto_renewal && $auto_renewal_on
+								? esc_html__( 'Next auto-renewal:', 'cm-discount-engine' )
+								: esc_html__( 'Next reminder:', 'cm-discount-engine' );
+							?>
+						</span>
 						<span class="cm-subscription-card__value">
 							<?php echo esc_html( date_i18n( get_option( 'date_format' ), strtotime( $subscription['next_date'] ) ) ); ?>
 						</span>
@@ -68,6 +82,65 @@ $reorder_url = CM_Subscription_Manager::get_reorder_url( get_current_user_id() )
 					</div>
 				<?php endif; ?>
 			</div>
+
+			<!-- Auto-Renewal Section -->
+			<?php if ( $auto_renewal_on && ( $is_active || $is_paused ) ) : ?>
+				<div class="cm-subscription-card__auto-renewal">
+					<div class="cm-subscription-card__auto-renewal-header">
+						<span class="cm-subscription-card__label"><?php esc_html_e( 'Auto-renewal:', 'cm-discount-engine' ); ?></span>
+						<?php if ( $user_auto_renewal ) : ?>
+							<span class="cm-auto-renewal-badge cm-auto-renewal-badge--on"><?php esc_html_e( 'ON', 'cm-discount-engine' ); ?></span>
+						<?php else : ?>
+							<span class="cm-auto-renewal-badge cm-auto-renewal-badge--off"><?php esc_html_e( 'OFF', 'cm-discount-engine' ); ?></span>
+						<?php endif; ?>
+					</div>
+
+					<?php if ( $payment_info ) : ?>
+						<div class="cm-subscription-card__payment-method">
+							<span class="cm-subscription-card__label"><?php esc_html_e( 'Payment method:', 'cm-discount-engine' ); ?></span>
+							<span class="cm-subscription-card__value">
+								<?php echo esc_html( ucfirst( $payment_info['brand'] ) ); ?>
+								****<?php echo esc_html( $payment_info['last4'] ); ?>
+								<small>(<?php echo esc_html( $payment_info['expiry'] ); ?>)</small>
+							</span>
+						</div>
+					<?php endif; ?>
+
+					<div class="cm-subscription-card__auto-renewal-actions">
+						<?php if ( $user_auto_renewal ) : ?>
+							<form method="post" class="cm-subscription-form cm-subscription-form--inline">
+								<?php wp_nonce_field( 'cm_subscription_action' ); ?>
+								<input type="hidden" name="cm_subscription_action" value="disable_auto_renewal">
+								<button type="submit" class="button cm-subscription-btn cm-subscription-btn--secondary cm-subscription-btn--small">
+									<?php esc_html_e( 'Disable auto-renewal', 'cm-discount-engine' ); ?>
+								</button>
+							</form>
+						<?php else : ?>
+							<?php if ( $payment_info ) : ?>
+								<form method="post" class="cm-subscription-form cm-subscription-form--inline">
+									<?php wp_nonce_field( 'cm_subscription_action' ); ?>
+									<input type="hidden" name="cm_subscription_action" value="enable_auto_renewal">
+									<button type="submit" class="button cm-subscription-btn cm-subscription-btn--primary cm-subscription-btn--small">
+										<?php esc_html_e( 'Enable auto-renewal', 'cm-discount-engine' ); ?>
+									</button>
+								</form>
+							<?php else : ?>
+								<p class="cm-subscription-card__hint">
+									<?php
+									printf(
+										wp_kses(
+											__( 'To enable auto-renewal, please <a href="%s">add a payment method</a> first.', 'cm-discount-engine' ),
+											array( 'a' => array( 'href' => array() ) )
+										),
+										esc_url( wc_get_account_endpoint_url( 'payment-methods' ) )
+									);
+									?>
+								</p>
+							<?php endif; ?>
+						<?php endif; ?>
+					</div>
+				</div>
+			<?php endif; ?>
 
 			<div class="cm-subscription-card__actions">
 				<?php if ( $is_active ) : ?>
@@ -154,18 +227,27 @@ $reorder_url = CM_Subscription_Manager::get_reorder_url( get_current_user_id() )
 			<!-- Order Now CTA -->
 			<?php if ( $is_active ) : ?>
 				<div class="cm-subscription-card__cta">
-					<div class="cm-subscription-card__cta-text">
-						<?php esc_html_e( 'Ready to order?', 'cm-discount-engine' ); ?>
-					</div>
-					<a href="<?php echo esc_url( $reorder_url ); ?>" class="button cm-subscription-btn cm-subscription-btn--cta">
-						<?php
-						printf(
-							esc_html__( 'Order Now with -%s%% discount', 'cm-discount-engine' ),
-							esc_html( $rate )
-						);
-						?>
-						<span class="cm-subscription-btn__arrow">&rarr;</span>
-					</a>
+					<?php if ( ! $user_auto_renewal || ! $auto_renewal_on ) : ?>
+						<div class="cm-subscription-card__cta-text">
+							<?php esc_html_e( 'Ready to order?', 'cm-discount-engine' ); ?>
+						</div>
+						<a href="<?php echo esc_url( $reorder_url ); ?>" class="button cm-subscription-btn cm-subscription-btn--cta">
+							<?php
+							printf(
+								esc_html__( 'Order Now with -%s%% discount', 'cm-discount-engine' ),
+								esc_html( $rate )
+							);
+							?>
+							<span class="cm-subscription-btn__arrow">&rarr;</span>
+						</a>
+					<?php else : ?>
+						<div class="cm-subscription-card__cta-text">
+							<?php esc_html_e( 'Your next order will be placed automatically.', 'cm-discount-engine' ); ?>
+						</div>
+						<a href="<?php echo esc_url( $reorder_url ); ?>" class="button cm-subscription-btn cm-subscription-btn--secondary">
+							<?php esc_html_e( 'Order Now (manual)', 'cm-discount-engine' ); ?>
+						</a>
+					<?php endif; ?>
 				</div>
 			<?php endif; ?>
 		</div>
@@ -196,6 +278,12 @@ $reorder_url = CM_Subscription_Manager::get_reorder_url( get_current_user_id() )
 					<span class="cm-subscription-empty__feature-icon">&#10003;</span>
 					<span><?php esc_html_e( 'Skip, pause or cancel anytime', 'cm-discount-engine' ); ?></span>
 				</div>
+				<?php if ( $auto_renewal_on ) : ?>
+					<div class="cm-subscription-empty__feature">
+						<span class="cm-subscription-empty__feature-icon">&#10003;</span>
+						<span><?php esc_html_e( 'Auto-renewal with saved payment method', 'cm-discount-engine' ); ?></span>
+					</div>
+				<?php endif; ?>
 			</div>
 			<a href="<?php echo esc_url( get_permalink( wc_get_page_id( 'shop' ) ) ); ?>" class="button cm-subscription-btn cm-subscription-btn--cta">
 				<?php esc_html_e( 'Start Shopping', 'cm-discount-engine' ); ?>
