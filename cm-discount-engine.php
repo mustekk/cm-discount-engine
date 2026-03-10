@@ -2,7 +2,7 @@
 /**
  * Plugin Name: CM Discount Engine
  * Description: Coffee Madman — система скидок (first order, quantity tiers, promo codes, subscription, bonus, referral) + flavor attributes, reorder, catalog tiers.
- * Version: 2.3.2
+ * Version: 2.4.0
  * Author: Coffee Madman
  * Requires at least: 6.0
  * Requires PHP: 7.4
