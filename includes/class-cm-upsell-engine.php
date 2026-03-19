@@ -155,6 +155,14 @@ class CM_Upsell_Engine {
 			return null;
 		}
 
+		// Don't show quantity upsell when subscription discount is active (−20% is always better)
+		if ( WC()->session ) {
+			$active = WC()->session->get( 'cm_active_discount' );
+			if ( $active && $active['type'] === 'subscription' ) {
+				return null;
+			}
+		}
+
 		$current_packs = CM_Discount_Types::count_eligible_packs( $cart );
 		$next_tier     = CM_Discount_Types::get_next_tier( $current_packs );
 
